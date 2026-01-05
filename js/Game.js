@@ -254,19 +254,50 @@ class Game {
     }
 
     spawnEnemy() {
-        // Spawn mostly from top, relative to camera
-        // 80% chance top, 20% mix
+        // Try to find a spawn point that isn't inside an obstacle
         let x, y;
+        let valid = false;
+        let attempts = 0;
 
-        if (Math.random() < 0.8) {
-            // Top spawn
-            x = Math.random() * this.width;
-            y = this.cameraY - 60;
-        } else {
-            // Side spawn (near top of view)
-            x = Math.random() < 0.5 ? -40 : this.width + 40;
-            y = this.cameraY + Math.random() * (this.height / 2);
+        while (!valid && attempts < 10) {
+            attempts++;
+
+            if (Math.random() < 0.8) {
+                // Top spawn
+                x = Math.random() * this.width;
+                y = this.cameraY - 60;
+            } else {
+                // Side spawn (near top of view)
+                x = Math.random() < 0.5 ? -40 : this.width + 40;
+                y = this.cameraY + Math.random() * (this.height / 2);
+            }
+
+            // Check overlap
+            // Assume default tank size 40x40
+            const dummy = { x: x, y: y, width: 40, height: 40, radius: 20 };
+            let collision = false;
+
+            for (let obs of this.obstacles) {
+                if (this.checkCollision(dummy, obs)) {
+                    collision = true;
+                    break;
+                }
+            }
+
+            // Also check wreckage? Unlikely to spawn on wreckage off-screen but valid safety
+            if (!collision) {
+                for (let wk of this.wreckage) {
+                    if (this.checkCollision(dummy, wk)) {
+                        collision = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!collision) valid = true;
         }
+
+        if (!valid) return; // Skip spawn if too crowded due to RNG
 
         // Determine Type based on progress (cameraY)
         // Map is ~2400 high. 0 is top.
