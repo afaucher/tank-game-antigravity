@@ -10,7 +10,9 @@ class Tank {
         this.width = 40;
         this.height = 40;
         this.speed = 2.0;
+        this.turnSpeed = 0.03;
         this.rotation = 0;
+        this.targetRotation = 0;
         this.turretRotation = 0;
         this.velocity = { x: 0, y: 0 };
         this.markedForDeletion = false;
@@ -30,27 +32,27 @@ class Tank {
         const configs = {
             'player': {
                 body: 'tankBody_blue', barrel: 'tankBlue_barrel1',
-                hp: 1, speed: 2.7, interval: 500, weapon: 'normal'
+                hp: 1, speed: 2.7, turnSpeed: 0.06, interval: 500, weapon: 'normal'
             },
             'red': {
                 body: 'tankBody_red', barrel: 'tankRed_barrel1',
-                hp: 1, speed: 1.8, interval: 2000, weapon: 'normal'
+                hp: 1, speed: 1.8, turnSpeed: 0.02, interval: 2000, weapon: 'normal'
             },
             'dark': {
                 body: 'tankBody_dark', barrel: 'tankDark_barrel1',
-                hp: 1, speed: 2.5, interval: 1500, weapon: 'normal'
+                hp: 1, speed: 2.5, turnSpeed: 0.03, interval: 1500, weapon: 'normal'
             },
             'sand': {
                 body: 'tankBody_sand', barrel: 'tankSand_barrel1',
-                hp: 1, speed: 1.5, interval: 2200, weapon: 'normal'
+                hp: 1, speed: 1.5, turnSpeed: 0.02, interval: 2200, weapon: 'normal'
             },
             'bigRed': {
                 body: 'tankBody_bigRed', barrel: 'tankRed_barrel1',
-                hp: 3, speed: 1.0, interval: 3000, weapon: 'missile'
+                hp: 3, speed: 1.0, turnSpeed: 0.015, interval: 3000, weapon: 'missile'
             },
             'huge': {
                 body: 'tankBody_huge', barrel: 'tankRed_barrel1', // Reuse red barrel for now
-                hp: 5, speed: 0.6, interval: 4000, weapon: 'missile'
+                hp: 5, speed: 0.6, turnSpeed: 0.01, interval: 4000, weapon: 'missile'
             }
         };
 
@@ -60,6 +62,7 @@ class Tank {
         this.barrelSprite = config.barrel;
         this.hp = config.hp;
         this.speed = config.speed;
+        this.turnSpeed = config.turnSpeed || 0.02;
         this.shotInterval = config.interval;
         this.weaponType = config.weapon;
 
