@@ -268,3 +268,104 @@ class TileMap {
         }
     }
 }
+
+generateObstacles() {
+    try {
+        const mapHeight = this.rows * this.tileSize;
+        const numFeatures = 25;
+
+        for (let i = 0; i < numFeatures; i++) {
+            let cx, cy, valid = false;
+            let attempts = 0;
+            while (!valid && attempts < 10) {
+                cx = Math.random() * (this.game.width - 100) + 50;
+                cy = Math.random() * (mapHeight - 300);
+
+                const distToPlayer = Math.sqrt((cx - this.game.width / 2) ** 2 + (cy - (mapHeight - 100)) ** 2);
+                if (distToPlayer > 400) valid = true;
+                attempts++;
+            }
+            if (!valid) continue;
+
+            const typeRoll = Math.random();
+
+            if (typeRoll < 0.25) {
+                // Cluster
+                const count = 1 + Math.floor(Math.random() * 3);
+                const colors = ['Rust', 'Black', 'Green', 'Red'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const offsets = [{ x: 0, y: 0 }, { x: 24, y: 5 }, { x: -10, y: 20 }];
+
+                for (let j = 0; j < count; j++) {
+                    const off = offsets[j];
+                    const suffix = Math.random() < 0.3 ? '_side' : '_top';
+                    const spriteName = 'barrel' + color + suffix;
+                    this.game.obstacles.push(new Obstacle(this.game, cx + off.x, cy + off.y, spriteName));
+                }
+            } else if (typeRoll < 0.5) {
+                // Barricade
+                const count = 2 + Math.floor(Math.random() * 3);
+                const barricadeTypes = ['barricadeWood', 'barricadeMetal'];
+                const baseType = barricadeTypes[Math.floor(Math.random() * barricadeTypes.length)];
+                const lineAngle = Math.random() * Math.PI;
+                const spacing = 45;
+
+                for (let j = 0; j < count; j++) {
+                    const lx = cx + Math.cos(lineAngle) * j * spacing;
+                    const ly = cy + Math.sin(lineAngle) * j * spacing;
+                    const rot = (Math.random() - 0.5) * 0.5;
+                    this.game.obstacles.push(new Obstacle(this.game, lx, ly, baseType, rot));
+                }
+            } else if (typeRoll < 0.7) {
+                // Sandbag
+                const count = 3 + Math.floor(Math.random() * 3);
+                const bagTypes = ['sandbagBeige', 'sandbagBrown'];
+                const baseType = bagTypes[Math.floor(Math.random() * bagTypes.length)];
+                const radius = 50;
+                const startAngle = Math.random() * Math.PI * 2;
+
+                for (let j = 0; j < count; j++) {
+                    const theta = startAngle + (j * (Math.PI / 4));
+                    const sx = cx + Math.cos(theta) * radius;
+                    const sy = cy + Math.sin(theta) * radius;
+                    const rot = theta;
+                    this.game.obstacles.push(new Obstacle(this.game, sx, sy, baseType, rot));
+                }
+            } else if (typeRoll < 0.9) {
+                // Trees
+                const count = 3 + Math.floor(Math.random() * 3);
+                const treeTypes = ['treeGreen_small', 'treeBrown_small', 'treeGreen_large', 'treeBrown_large'];
+                const placedOffsets = [];
+
+                for (let j = 0; j < count; j++) {
+                    let validPos = false;
+                    let attempts = 0;
+                    let ox, oy;
+                    while (!validPos && attempts < 10) {
+                        ox = (Math.random() - 0.5) * 140;
+                        oy = (Math.random() - 0.5) * 140;
+                        validPos = true;
+                        for (let p of placedOffsets) {
+                            const dist = Math.sqrt((ox - p.x) ** 2 + (oy - p.y) ** 2);
+                            if (dist < 50) { validPos = false; break; }
+                        }
+                        attempts++;
+                    }
+                    if (validPos) {
+                        placedOffsets.push({ x: ox, y: oy });
+                        const type = treeTypes[Math.floor(Math.random() * treeTypes.length)];
+                        this.game.obstacles.push(new Obstacle(this.game, cx + ox, cy + oy, type));
+                    }
+                }
+            } else {
+                // Misc
+                const miscTypes = ['crateWood', 'crateMetal', 'fenceRed', 'fenceYellow'];
+                const type = miscTypes[Math.floor(Math.random() * miscTypes.length)];
+                this.game.obstacles.push(new Obstacle(this.game, cx, cy, type));
+            }
+        }
+    } catch (e) {
+        console.error("Error generating obstacles:", e);
+    }
+}
+}

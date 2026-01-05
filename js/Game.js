@@ -63,7 +63,9 @@ class Game {
         this.explosions = [];
         this.oilSpills = [];
 
-        this.generateObstacles();
+        this.oilSpills = [];
+
+        this.tileMap.generateObstacles();
 
         this.enemyTimer = 0;
         this.enemyInterval = 2000;
@@ -402,136 +404,7 @@ class Game {
         return distance < (r1 + r2);
     }
 
-    generateObstacles() {
-        try {
-            const mapHeight = this.tileMap ? (this.tileMap.rows * this.tileMap.tileSize) : this.height;
 
-            const numFeatures = 25; // Number of obstacle groups
-
-            for (let i = 0; i < numFeatures; i++) {
-                // Pick a random spot for the feature center
-                // Avoid player start area
-                let cx, cy, valid = false;
-                let attempts = 0;
-                while (!valid && attempts < 10) {
-                    cx = Math.random() * (this.width - 100) + 50;
-                    cy = Math.random() * (mapHeight - 300); // Don't spawn at very bottom
-
-                    const distToPlayer = Math.sqrt((cx - this.width / 2) ** 2 + (cy - (mapHeight - 100)) ** 2);
-                    if (distToPlayer > 400) valid = true;
-                    attempts++;
-                }
-                if (!valid) continue;
-
-                const typeRoll = Math.random();
-
-                if (typeRoll < 0.25) {
-                    // --- Barrel Cluster (1-3 barrels) ---
-                    // Fixed offsets to prevent overlap
-                    const count = 1 + Math.floor(Math.random() * 3);
-
-                    // Pick a random color theme for this cluster
-                    const colors = ['Rust', 'Black', 'Green', 'Red'];
-                    const color = colors[Math.floor(Math.random() * colors.length)];
-
-                    const offsets = [{ x: 0, y: 0 }, { x: 24, y: 5 }, { x: -10, y: 20 }];
-
-                    for (let j = 0; j < count; j++) {
-                        const off = offsets[j];
-
-                        // 30% chance to be on side per barrel
-                        const suffix = Math.random() < 0.3 ? '_side' : '_top';
-                        const spriteName = 'barrel' + color + suffix;
-
-                        this.obstacles.push(new Obstacle(this, cx + off.x, cy + off.y, spriteName));
-                    }
-
-                } else if (typeRoll < 0.5) {
-                    // --- Barricade Line (2-4 items) ---
-                    const count = 2 + Math.floor(Math.random() * 3);
-                    const barricadeTypes = ['barricadeWood', 'barricadeMetal'];
-                    const baseType = barricadeTypes[Math.floor(Math.random() * barricadeTypes.length)];
-
-                    // Random orientation for the line
-                    const lineAngle = Math.random() * Math.PI;
-                    const spacing = 45; // Increased spacing
-
-                    for (let j = 0; j < count; j++) {
-                        // Slight offset along the line
-                        const lx = cx + Math.cos(lineAngle) * j * spacing;
-                        const ly = cy + Math.sin(lineAngle) * j * spacing;
-
-                        // Slight random rotation for the object itself
-                        const rot = (Math.random() - 0.5) * 0.5;
-                        this.obstacles.push(new Obstacle(this, lx, ly, baseType, rot));
-                    }
-
-                } else if (typeRoll < 0.7) {
-                    // --- Sandbag Semicircle ---
-                    const count = 3 + Math.floor(Math.random() * 3);
-                    const bagTypes = ['sandbagBeige', 'sandbagBrown'];
-                    const baseType = bagTypes[Math.floor(Math.random() * bagTypes.length)];
-
-                    const radius = 50; // Increased radius
-                    const startAngle = Math.random() * Math.PI * 2;
-
-                    for (let j = 0; j < count; j++) {
-                        const theta = startAngle + (j * (Math.PI / 4)); // 45 degrees steps
-                        const sx = cx + Math.cos(theta) * radius;
-                        const sy = cy + Math.sin(theta) * radius;
-                        // Rotate bag to face center? Or random?
-                        // Usually sandbags face OUT or IN. Let's rotate perpendicular to radius.
-                        const rot = theta;
-                        this.obstacles.push(new Obstacle(this, sx, sy, baseType, rot));
-                    }
-
-                } else if (typeRoll < 0.9) {
-                    // --- Tree Grove ---
-                    const count = 3 + Math.floor(Math.random() * 3); // Slightly more trees if room permits
-                    const treeTypes = ['treeGreen_small', 'treeBrown_small', 'treeGreen_large', 'treeBrown_large'];
-                    const placedOffsets = [];
-
-                    for (let j = 0; j < count; j++) {
-                        let validPos = false;
-                        let attempts = 0;
-                        let ox, oy;
-
-                        while (!validPos && attempts < 10) {
-                            // Increased spread area to 140 to allow spacing
-                            ox = (Math.random() - 0.5) * 140;
-                            oy = (Math.random() - 0.5) * 140;
-
-                            validPos = true;
-                            // Check against existing trees in this cluster
-                            for (let p of placedOffsets) {
-                                const dist = Math.sqrt((ox - p.x) ** 2 + (oy - p.y) ** 2);
-                                if (dist < 50) { // Ensure at least 50px apart
-                                    validPos = false;
-                                    break;
-                                }
-                            }
-                            attempts++;
-                        }
-
-                        if (validPos) {
-                            placedOffsets.push({ x: ox, y: oy });
-                            const type = treeTypes[Math.floor(Math.random() * treeTypes.length)];
-                            this.obstacles.push(new Obstacle(this, cx + ox, cy + oy, type));
-                        }
-                    }
-
-                } else {
-                    // --- Random Scatter (Crates/Fences) ---
-                    // Just one or two
-                    const miscTypes = ['crateWood', 'crateMetal', 'fenceRed', 'fenceYellow'];
-                    const type = miscTypes[Math.floor(Math.random() * miscTypes.length)];
-                    this.obstacles.push(new Obstacle(this, cx, cy, type));
-                }
-            }
-        } catch (e) {
-            console.error("Error generating obstacles:", e);
-        }
-    }
 
     checkPlayerObstacleCollisions(input) {
         // Simple resolution: if colliding, move back
@@ -546,6 +419,14 @@ class Game {
         // Wreckage Collision
         this.wreckage.forEach(w => {
             if (this.checkCollision(this.player, w)) {
+                this.player.x -= this.player.velocity.x;
+                this.player.y -= this.player.velocity.y;
+            }
+        });
+
+        // Enemy Tank Collision (solid)
+        this.enemies.forEach(enemy => {
+            if (this.checkCollision(this.player, enemy)) {
                 this.player.x -= this.player.velocity.x;
                 this.player.y -= this.player.velocity.y;
             }

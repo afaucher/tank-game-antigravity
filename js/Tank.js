@@ -251,80 +251,115 @@ class Tank {
             // Normal / Heavy (Heavy is just normal with big sprite)
             this.fireProjectile(0);
         }
+        this.fireProjectile(0);
+    }
+}
+
+takeDamage() {
+    this.hp--;
+
+    // Oil Spill (Small) on damage: 40%
+    if (Math.random() < 0.4) {
+        this.game.oilSpills.push(new OilSpill(this.game, this.x, this.y, 'small'));
     }
 
-    fireProjectile(angleOffset, overrideType) {
-        // Calculate bullet start position (tip of nozzle)
-        const nozzleLength = 30;
-        const bx = this.x + Math.cos(this.turretRotation) * nozzleLength;
-        const by = this.y + Math.sin(this.turretRotation) * nozzleLength;
+    if (this.hp <= 0) {
+        this.dead = true;
+        this.game.explosions.push(new Explosion(this.game, this.x, this.y));
 
-        let fireAngle = this.turretRotation + angleOffset;
+        // Large Oil Spill
+        const chance = this.isPlayer ? 1.0 : 0.2;
+        if (Math.random() < chance) {
+            this.game.oilSpills.push(new OilSpill(this.game, this.x, this.y, 'large'));
+        }
 
         if (!this.isPlayer) {
-            // Add randomness: +/- 0.05 radians (very accurate now, patterns handle spread)
-            const inaccuracy = (Math.random() - 0.5) * 0.1;
-            fireAngle += inaccuracy;
+            this.markedForDeletion = true;
+            this.die();
+            this.game.wreckage.push(this);
+
+            // Score
+            let points = 10;
+            if (this.type === 'bigRed') points = 50;
+            if (this.type === 'huge') points = 100;
+            this.game.score += points;
+            document.getElementById('score').innerText = 'Score: ' + this.game.score;
         }
+    }
+}
 
-        let bType = overrideType || 'normal';
-        let bSprite = this.bulletSprite;
+fireProjectile(angleOffset, overrideType) {
+    // Calculate bullet start position (tip of nozzle)
+    const nozzleLength = 30;
+    const bx = this.x + Math.cos(this.turretRotation) * nozzleLength;
+    const by = this.y + Math.sin(this.turretRotation) * nozzleLength;
 
-        if (overrideType === 'missile') {
-            bType = 'missile'; // Logic logic handles stats
-            bSprite = null;    // Bullet logic handles sprite
-        }
+    let fireAngle = this.turretRotation + angleOffset;
 
-        this.game.createBullet(bx, by, fireAngle, this.isPlayer, bType, bSprite);
+    if (!this.isPlayer) {
+        // Add randomness: +/- 0.05 radians (very accurate now, patterns handle spread)
+        const inaccuracy = (Math.random() - 0.5) * 0.1;
+        fireAngle += inaccuracy;
     }
 
-    handleCollision(obstacle) {
-        // Simple bounce/re-route logic
-        // 1. Revert position slightly to unstuck
-        this.x -= this.velocity.x * 2.0;
-        this.y -= this.velocity.y * 2.0;
+    let bType = overrideType || 'normal';
+    let bSprite = this.bulletSprite;
 
-        // 2. Change direction (Randomly turn between 90 and 270 degrees)
-        let currentAngle = this.rotation;
-        const turnAngle = Math.PI / 2 + Math.random() * Math.PI;
-        currentAngle += turnAngle;
-
-        // 3. Update velocity
-        this.velocity.x = Math.cos(currentAngle) * this.speed;
-        this.velocity.y = Math.sin(currentAngle) * this.speed;
-
-        // 4. Update rotation to match visual
-        this.rotation = currentAngle;
+    if (overrideType === 'missile') {
+        bType = 'missile'; // Logic logic handles stats
+        bSprite = null;    // Bullet logic handles sprite
     }
 
-    die() {
-        this.dead = true;
-        this.velocity = { x: 0, y: 0 };
-        // Launch turret
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 4 + Math.random() * 4; // Fly off fast
-        this.turretVelocity = {
-            x: Math.cos(angle) * speed,
-            y: Math.sin(angle) * speed
-        };
-        this.turretSpin = (Math.random() - 0.5) * 0.5;
-    }
+    this.game.createBullet(bx, by, fireAngle, this.isPlayer, bType, bSprite);
+}
 
-    draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
+handleCollision(obstacle) {
+    // Simple bounce/re-route logic
+    // 1. Revert position slightly to unstuck
+    this.x -= this.velocity.x * 2.0;
+    this.y -= this.velocity.y * 2.0;
 
-        // Draw Body
-        // Body rotation is this.rotation.
-        // We need to account for sprite orientation. Usually sprites point "up".
-        // Our 0 rotation is East. So we might need + 90 deg (PI/2) depending on asset.
-        // Looking at tankBody_blue.png, it points Up.
-        this.game.assetManager.drawSprite(ctx, this.bodySprite, 0, 0, this.width, this.height, this.rotation + Math.PI / 2);
+    // 2. Change direction (Randomly turn between 90 and 270 degrees)
+    let currentAngle = this.rotation;
+    const turnAngle = Math.PI / 2 + Math.random() * Math.PI;
+    currentAngle += turnAngle;
 
-        // Draw Turret
-        // Turret also likely points Up default.
-        this.game.assetManager.drawSprite(ctx, this.barrelSprite, this.turretOffset.x, this.turretOffset.y, undefined, undefined, this.turretRotation + Math.PI / 2);
+    // 3. Update velocity
+    this.velocity.x = Math.cos(currentAngle) * this.speed;
+    this.velocity.y = Math.sin(currentAngle) * this.speed;
 
-        ctx.restore();
-    }
+    // 4. Update rotation to match visual
+    this.rotation = currentAngle;
+}
+
+die() {
+    this.dead = true;
+    this.velocity = { x: 0, y: 0 };
+    // Launch turret
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 4; // Fly off fast
+    this.turretVelocity = {
+        x: Math.cos(angle) * speed,
+        y: Math.sin(angle) * speed
+    };
+    this.turretSpin = (Math.random() - 0.5) * 0.5;
+}
+
+draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    // Draw Body
+    // Body rotation is this.rotation.
+    // We need to account for sprite orientation. Usually sprites point "up".
+    // Our 0 rotation is East. So we might need + 90 deg (PI/2) depending on asset.
+    // Looking at tankBody_blue.png, it points Up.
+    this.game.assetManager.drawSprite(ctx, this.bodySprite, 0, 0, this.width, this.height, this.rotation + Math.PI / 2);
+
+    // Draw Turret
+    // Turret also likely points Up default.
+    this.game.assetManager.drawSprite(ctx, this.barrelSprite, this.turretOffset.x, this.turretOffset.y, undefined, undefined, this.turretRotation + Math.PI / 2);
+
+    ctx.restore();
+}
 }
