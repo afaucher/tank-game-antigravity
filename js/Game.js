@@ -73,6 +73,10 @@ class Game {
     }
 
     update(deltaTime) {
+        // Update Explosions (Always update to show death animation)
+        this.explosions.forEach(explosions => explosions.update(deltaTime));
+        this.explosions = this.explosions.filter(explosions => !explosions.markedForDeletion);
+
         if (this.gameOver || this.won) return;
 
         const mapHeight = this.tileMap.rows * this.tileMap.tileSize;
@@ -102,9 +106,6 @@ class Game {
 
         this.player.update(input);
 
-        // Update Explosions
-        this.explosions.forEach(explosions => explosions.update(deltaTime));
-        this.explosions = this.explosions.filter(explosions => !explosions.markedForDeletion);
 
         // Check Player vs Obstacles
         this.checkPlayerObstacleCollisions(input);
@@ -141,6 +142,7 @@ class Game {
             // Check collision with player
             if (this.checkCollision(this.player, enemy)) {
                 if (!this.godMode) {
+                    this.explosions.push(new Explosion(this, this.player.x, this.player.y));
                     this.gameOver = true;
                     document.getElementById('game-over').classList.remove('hidden');
                 }
@@ -193,6 +195,7 @@ class Game {
                     bullet.markedForDeletion = true;
                     // Player HP? For now, 1 hit kill.
                     if (!this.godMode) {
+                        this.explosions.push(new Explosion(this, this.player.x, this.player.y));
                         this.gameOver = true;
                         document.getElementById('game-over').classList.remove('hidden');
                     }
