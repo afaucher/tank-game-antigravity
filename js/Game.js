@@ -11,6 +11,7 @@ class Game {
         this.bullets = [];
         this.enemies = [];
         this.obstacles = [];
+        this.tracks = []; // Track marks
         this.tileMap = null;
 
         this.score = 0;
@@ -108,6 +109,10 @@ class Game {
         // Check Player vs Obstacles
         this.checkPlayerObstacleCollisions(input);
 
+        // Update Tracks
+        this.tracks.forEach(t => t.update());
+        this.tracks = this.tracks.filter(t => t.life > 0);
+
         // Update Bullets
         this.bullets.forEach(bullet => bullet.update());
         this.bullets = this.bullets.filter(bullet => !bullet.markedForDeletion);
@@ -204,6 +209,12 @@ class Game {
         if (this.tileMap) {
             this.tileMap.draw(ctx);
         }
+
+        this.tracks.forEach(track => {
+            if (track.y < this.cameraY + this.height && track.y + track.height > this.cameraY) {
+                track.draw(ctx);
+            }
+        });
 
         this.obstacles.forEach(obstacle => obstacle.draw(ctx));
         this.player.draw(ctx);
@@ -456,6 +467,7 @@ class Game {
         this.bullets = [];
         this.enemies = [];
         this.explosions = [];
+        this.tracks = [];
 
         this.enemyTimer = 0;
         document.getElementById('game-over').classList.add('hidden');

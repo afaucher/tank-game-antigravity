@@ -19,6 +19,7 @@ class Tank {
         this.weaponType = 'normal';
         this.shotInterval = 2000;
         this.lastShotTime = 0;
+        this.distSinceLastTrack = 0;
 
         // Configure Types
         const configs = {
@@ -94,6 +95,16 @@ class Tank {
             this.x += this.velocity.x;
             this.y += this.velocity.y;
 
+            // Track Spawning
+            const moveDist = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+            if (moveDist > 0) {
+                this.distSinceLastTrack += moveDist;
+                if (this.distSinceLastTrack > 25) {
+                    this.game.tracks.push(new Track(this.game, this.x, this.y, this.rotation));
+                    this.distSinceLastTrack = 0;
+                }
+            }
+
             // Constrain to screen (Map Bounds)
             const mapHeight = this.game.tileMap ? (this.game.tileMap.rows * this.game.tileMap.tileSize) : this.game.height;
 
@@ -128,6 +139,16 @@ class Tank {
 
         this.x += this.velocity.x;
         this.y += this.velocity.y;
+
+        // Track Spawning
+        const moveDist = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+        if (moveDist > 0) {
+            this.distSinceLastTrack += moveDist;
+            if (this.distSinceLastTrack > 25) {
+                this.game.tracks.push(new Track(this.game, this.x, this.y, this.rotation));
+                this.distSinceLastTrack = 0;
+            }
+        }
 
         // Aim at player
         if (this.game.player) {
