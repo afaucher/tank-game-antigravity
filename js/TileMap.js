@@ -3,7 +3,7 @@ class TileMap {
         console.log("TileMap initialized");
         this.game = game;
         this.tileSize = 64;
-        this.rows = 13;
+        this.rows = 40; // Approx 3 screens tall (3 * 13 = 39)
         this.cols = 20;
 
         // Socket Types:

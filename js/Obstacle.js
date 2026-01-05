@@ -1,13 +1,25 @@
 class Obstacle {
-    constructor(game, x, y) {
+    constructor(game, x, y, type = null, rotation = 0) {
         this.game = game;
         this.x = x;
         this.y = y;
+        this.rotation = rotation;
         this.color = '#8B4513'; // SaddleBrown for rocks
 
-        // Random Type: crateWood, crateMetal, barricadeWood, barricadeMetal, treeGreen_small, treeBrown_small
-        const types = ['crateWood', 'crateMetal', 'barricadeWood', 'treeGreen_small', 'treeBrown_small'];
-        this.spriteName = types[Math.floor(Math.random() * types.length)];
+        if (type) {
+            this.spriteName = type;
+        } else {
+            // Random Type: crateWood, crateMetal, barricadeWood, barricadeMetal, treeGreen_small, treeBrown_small, etc.
+            const types = [
+                'crateWood', 'crateMetal',
+                'barricadeWood', 'barricadeMetal',
+                'treeGreen_small', 'treeBrown_small',
+                'fenceRed', 'fenceYellow',
+                'sandbagBeige', 'sandbagBrown',
+                'barrelRust_top', 'barrelBlack_top'
+            ];
+            this.spriteName = types[Math.floor(Math.random() * types.length)];
+        }
 
         const sprite = this.game.assetManager.getSprite(this.spriteName);
         if (sprite) {
@@ -34,6 +46,6 @@ class Obstacle {
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
 
-        this.game.assetManager.drawSprite(ctx, this.spriteName, cx, cy);
+        this.game.assetManager.drawSprite(ctx, this.spriteName, cx, cy, this.width, this.height, this.rotation);
     }
 }

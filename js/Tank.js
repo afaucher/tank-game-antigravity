@@ -1,33 +1,63 @@
 class Tank {
-    constructor(game, x, y, color = '#4CAF50', isPlayer = false) {
+    constructor(game, x, y, type = 'player', isPlayer = false) {
         this.game = game;
         this.x = x;
         this.y = y;
-        this.width = 40;
-        this.height = 40;
-        this.color = color;
+        this.type = type; // player, red, dark, sand, bigRed, huge
         this.isPlayer = isPlayer;
 
-        this.speed = 2.7;
+        // Default Stats
+        this.width = 40;
+        this.height = 40;
+        this.speed = 2.0;
         this.rotation = 0;
         this.turretRotation = 0;
-
         this.velocity = { x: 0, y: 0 };
         this.markedForDeletion = false;
 
-        // Cooldown
+        this.hp = 1;
+        this.weaponType = 'normal';
+        this.shotInterval = 2000;
         this.lastShotTime = 0;
-        this.shotInterval = isPlayer ? 500 : 2000; // ms
 
-        // Sprite assignment
-        if (this.isPlayer) {
-            this.bodySprite = 'tankBody_blue';
-            this.barrelSprite = 'tankBlue_barrel1';
-        } else {
-            this.bodySprite = 'tankBody_red';
-            this.barrelSprite = 'tankRed_barrel1';
-        }
+        // Configure Types
+        const configs = {
+            'player': {
+                body: 'tankBody_blue', barrel: 'tankBlue_barrel1',
+                hp: 1, speed: 2.7, interval: 500, weapon: 'normal'
+            },
+            'red': {
+                body: 'tankBody_red', barrel: 'tankRed_barrel1',
+                hp: 1, speed: 1.8, interval: 2000, weapon: 'normal'
+            },
+            'dark': {
+                body: 'tankBody_dark', barrel: 'tankDark_barrel1',
+                hp: 1, speed: 2.5, interval: 1500, weapon: 'normal'
+            },
+            'sand': {
+                body: 'tankBody_sand', barrel: 'tankSand_barrel1',
+                hp: 1, speed: 1.5, interval: 2200, weapon: 'normal'
+            },
+            'bigRed': {
+                body: 'tankBody_bigRed', barrel: 'tankRed_barrel1',
+                hp: 3, speed: 1.0, interval: 3000, weapon: 'missile'
+            },
+            'huge': {
+                body: 'tankBody_huge', barrel: 'tankRed_barrel1', // Reuse red barrel for now
+                hp: 5, speed: 0.6, interval: 4000, weapon: 'missile'
+            }
+        };
 
+        const config = configs[this.type] || configs['red'];
+
+        this.bodySprite = config.body;
+        this.barrelSprite = config.barrel;
+        this.hp = config.hp;
+        this.speed = config.speed;
+        this.shotInterval = config.interval;
+        this.weaponType = config.weapon;
+
+        // Get Dimensions from sprite
         const sprite = this.game.assetManager.getSprite(this.bodySprite);
         if (sprite) {
             this.width = sprite.width;
@@ -64,9 +94,12 @@ class Tank {
             this.x += this.velocity.x;
             this.y += this.velocity.y;
 
-            // Constrain to screen
+            // Constrain to screen (Map Bounds)
+            const mapHeight = this.game.tileMap ? (this.game.tileMap.rows * this.game.tileMap.tileSize) : this.game.height;
+
             this.x = Math.max(this.width / 2, Math.min(this.game.width - this.width / 2, this.x));
-            this.y = Math.max(this.height / 2, Math.min(this.game.height - this.height / 2, this.y));
+            // Allow going off top (-100) for win condition, constrain bottom to mapHeight
+            this.y = Math.max(-100, Math.min(mapHeight - this.height / 2, this.y));
 
             // Body rotation follows movement if moving
             if (this.velocity.x !== 0 || this.velocity.y !== 0) {
@@ -103,12 +136,18 @@ class Tank {
             this.turretRotation = Math.atan2(dy, dx);
 
             // Shoot randomly or when aligned? Let's just shoot on interval
-            this.shoot();
+            // Only fire if within engage range
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 450) {
+                this.shoot();
+            }
         }
 
         // Deletion check if off screen strongly
+        // Deletion check if off screen strongly
+        const mapHeight = this.game.tileMap ? (this.game.tileMap.rows * this.game.tileMap.tileSize) : this.game.height;
         if (this.x < -100 || this.x > this.game.width + 100 ||
-            this.y < -100 || this.y > this.game.height + 100) {
+            this.y < -100 || this.y > mapHeight + 100) {
             this.markedForDeletion = true;
         }
     }
@@ -130,8 +169,27 @@ class Tank {
                 fireAngle += inaccuracy;
             }
 
-            this.game.createBullet(bx, by, fireAngle, this.isPlayer);
+            this.game.createBullet(bx, by, fireAngle, this.isPlayer, this.weaponType);
         }
+    }
+
+    handleCollision(obstacle) {
+        // Simple bounce/re-route logic
+        // 1. Revert position slightly to unstuck
+        this.x -= this.velocity.x * 2.0;
+        this.y -= this.velocity.y * 2.0;
+
+        // 2. Change direction (Randomly turn between 90 and 270 degrees)
+        let currentAngle = this.rotation;
+        const turnAngle = Math.PI / 2 + Math.random() * Math.PI;
+        currentAngle += turnAngle;
+
+        // 3. Update velocity
+        this.velocity.x = Math.cos(currentAngle) * this.speed;
+        this.velocity.y = Math.sin(currentAngle) * this.speed;
+
+        // 4. Update rotation to match visual
+        this.rotation = currentAngle;
     }
 
     draw(ctx) {
