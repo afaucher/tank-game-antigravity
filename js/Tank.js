@@ -15,6 +15,11 @@ class Tank {
         this.velocity = { x: 0, y: 0 };
         this.markedForDeletion = false;
 
+        this.dead = false;
+        this.turretOffset = { x: 0, y: 0 };
+        this.turretVelocity = { x: 0, y: 0 };
+        this.turretSpin = 0;
+
         this.hp = 1;
         this.weaponType = 'normal';
         this.shotInterval = 2000;
@@ -67,40 +72,51 @@ class Tank {
     }
 
     update(input) {
+        if (this.dead) {
+            this.turretOffset.x += this.turretVelocity.x;
+            this.turretOffset.y += this.turretVelocity.y;
+            this.turretRotation += this.turretSpin;
+
+            this.turretSpin *= 0.9; // Fast angular drag
+            this.turretVelocity.x *= 0.95; // Linear drag
+            this.turretVelocity.y *= 0.95;
+            return;
+        }
+
         if (this.isPlayer && input) {
-            // Movement Logic
-            this.velocity.x = 0;
-            this.velocity.y = 0;
+            // Tank Steering Controls
+            let currentSpeed = 0;
 
             if (input.keys.includes('KeyW') || input.keys.includes('ArrowUp')) {
-                this.velocity.y = -this.speed;
+                currentSpeed = this.speed;
             }
             if (input.keys.includes('KeyS') || input.keys.includes('ArrowDown')) {
-                this.velocity.y = this.speed;
+                currentSpeed = -this.speed * 0.6; // Reverse is slower
             }
             if (input.keys.includes('KeyA') || input.keys.includes('ArrowLeft')) {
-                this.velocity.x = -this.speed;
+                this.rotation -= this.turnSpeed;
             }
             if (input.keys.includes('KeyD') || input.keys.includes('ArrowRight')) {
-                this.velocity.x = this.speed;
+                this.rotation += this.turnSpeed;
             }
 
-            // Normalizing diagonal movement
-            if (this.velocity.x !== 0 && this.velocity.y !== 0) {
-                const magnitude = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
-                this.velocity.x = (this.velocity.x / magnitude) * this.speed;
-                this.velocity.y = (this.velocity.y / magnitude) * this.speed;
-            }
+            // Calculate Velocity
+            this.velocity.x = Math.cos(this.rotation) * currentSpeed;
+            this.velocity.y = Math.sin(this.rotation) * currentSpeed;
 
             this.x += this.velocity.x;
             this.y += this.velocity.y;
 
             // Track Spawning
-            const moveDist = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+            const moveDist = Math.abs(currentSpeed); // Simple distance approximation per frame
             if (moveDist > 0) {
                 this.distSinceLastTrack += moveDist;
                 if (this.distSinceLastTrack > 25) {
-                    this.game.tracks.push(new Track(this.game, this.x, this.y, this.rotation));
+                    // Offset tracks backwards so they don't appear in front
+                    const off = 15;
+                    const tx = this.x - Math.cos(this.rotation) * off;
+                    const ty = this.y - Math.sin(this.rotation) * off;
+                    this.game.tracks.push(new Track(this.game, tx, ty, this.rotation));
                     this.distSinceLastTrack = 0;
                 }
             }
@@ -112,10 +128,8 @@ class Tank {
             // Allow going off top (-100) for win condition, constrain bottom to mapHeight
             this.y = Math.max(-100, Math.min(mapHeight - this.height / 2, this.y));
 
-            // Body rotation follows movement if moving
-            if (this.velocity.x !== 0 || this.velocity.y !== 0) {
-                this.rotation = Math.atan2(this.velocity.y, this.velocity.x);
-            }
+            // Rotation is controlled directly, so no need to calc from velocity
+
 
             // Turret rotation follows mouse
             if (input.mouse) {
@@ -134,18 +148,34 @@ class Tank {
     }
 
     updateAI() {
-        // Simple AI: Move in current rotation direction (driving across screen)
-        // We set initial velocity/rotation when spawning
+        // AI Steering: Turn towards targetRotation
+        let diff = this.targetRotation - this.rotation;
+        // Normalize angle difference
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+
+        if (Math.abs(diff) > this.turnSpeed) {
+            this.rotation += Math.sign(diff) * this.turnSpeed;
+        } else {
+            this.rotation = this.targetRotation;
+        }
+
+        // Move Forward
+        this.velocity.x = Math.cos(this.rotation) * this.speed;
+        this.velocity.y = Math.sin(this.rotation) * this.speed;
 
         this.x += this.velocity.x;
         this.y += this.velocity.y;
 
         // Track Spawning
-        const moveDist = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+        const moveDist = this.speed; // Always moving full speed?
         if (moveDist > 0) {
             this.distSinceLastTrack += moveDist;
             if (this.distSinceLastTrack > 25) {
-                this.game.tracks.push(new Track(this.game, this.x, this.y, this.rotation));
+                const off = 15;
+                const tx = this.x - Math.cos(this.rotation) * off;
+                const ty = this.y - Math.sin(this.rotation) * off;
+                this.game.tracks.push(new Track(this.game, tx, ty, this.rotation));
                 this.distSinceLastTrack = 0;
             }
         }
@@ -213,6 +243,19 @@ class Tank {
         this.rotation = currentAngle;
     }
 
+    die() {
+        this.dead = true;
+        this.velocity = { x: 0, y: 0 };
+        // Launch turret
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 4 + Math.random() * 4; // Fly off fast
+        this.turretVelocity = {
+            x: Math.cos(angle) * speed,
+            y: Math.sin(angle) * speed
+        };
+        this.turretSpin = (Math.random() - 0.5) * 0.5;
+    }
+
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -226,7 +269,7 @@ class Tank {
 
         // Draw Turret
         // Turret also likely points Up default.
-        this.game.assetManager.drawSprite(ctx, this.barrelSprite, 0, 0, undefined, undefined, this.turretRotation + Math.PI / 2);
+        this.game.assetManager.drawSprite(ctx, this.barrelSprite, this.turretOffset.x, this.turretOffset.y, undefined, undefined, this.turretRotation + Math.PI / 2);
 
         ctx.restore();
     }

@@ -12,6 +12,7 @@ class Game {
         this.enemies = [];
         this.obstacles = [];
         this.tracks = []; // Track marks
+        this.wreckage = [];
         this.tileMap = null;
 
         this.score = 0;
@@ -114,6 +115,10 @@ class Game {
         this.tracks.forEach(t => t.update());
         this.tracks = this.tracks.filter(t => t.life > 0);
 
+        // Update Wreckage
+        this.wreckage.forEach(w => w.update());
+        // (Optional: remove wreckage after long time? For now keep them)
+
         // Update Bullets
         this.bullets.forEach(bullet => bullet.update());
         this.bullets = this.bullets.filter(bullet => !bullet.markedForDeletion);
@@ -153,6 +158,12 @@ class Game {
                     enemy.handleCollision(obstacle);
                 }
             });
+            // Check collision with wreckage
+            this.wreckage.forEach(w => {
+                if (this.checkCollision(enemy, w)) {
+                    enemy.handleCollision(w);
+                }
+            });
         });
 
         this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
@@ -162,6 +173,12 @@ class Game {
             // Check Obstacles
             this.obstacles.forEach(obstacle => {
                 if (this.checkCollision(bullet, obstacle)) {
+                    bullet.markedForDeletion = true;
+                }
+            });
+            // Check Wreckage
+            this.wreckage.forEach(w => {
+                if (this.checkCollision(bullet, w)) {
                     bullet.markedForDeletion = true;
                 }
             });
@@ -177,6 +194,8 @@ class Game {
                         enemy.hp--;
                         if (enemy.hp <= 0) {
                             enemy.markedForDeletion = true;
+                            enemy.die();
+                            this.wreckage.push(enemy);
                             this.explosions.push(new Explosion(this, enemy.x, enemy.y));
 
                             // Score based on type
@@ -218,6 +237,8 @@ class Game {
                 track.draw(ctx);
             }
         });
+
+        this.wreckage.forEach(w => w.draw(ctx));
 
         this.obstacles.forEach(obstacle => obstacle.draw(ctx));
         this.player.draw(ctx);
@@ -273,9 +294,9 @@ class Game {
         const targetY = Math.random() * this.height;
         const angle = Math.atan2(targetY - y, targetX - x);
 
-        enemy.velocity.x = Math.cos(angle) * 1.8; // Slower than player
-        enemy.velocity.y = Math.sin(angle) * 1.8;
         enemy.rotation = angle;
+        enemy.targetRotation = angle;
+        // Velocity is calculated in updateAI based on rotation
 
         this.enemies.push(enemy);
     }
@@ -449,7 +470,15 @@ class Game {
         // Simple resolution: if colliding, move back
         this.obstacles.forEach(obstacle => {
             if (this.checkCollision(this.player, obstacle)) {
-                // Revert movement roughly
+                // Revert position
+                this.player.x -= this.player.velocity.x;
+                this.player.y -= this.player.velocity.y;
+            }
+        });
+
+        // Wreckage Collision
+        this.wreckage.forEach(w => {
+            if (this.checkCollision(this.player, w)) {
                 this.player.x -= this.player.velocity.x;
                 this.player.y -= this.player.velocity.y;
             }
@@ -471,6 +500,7 @@ class Game {
         this.enemies = [];
         this.explosions = [];
         this.tracks = [];
+        this.wreckage = [];
 
         this.enemyTimer = 0;
         document.getElementById('game-over').classList.add('hidden');
