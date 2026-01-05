@@ -61,6 +61,7 @@ class Game {
         this.enemies = [];
         this.obstacles = [];
         this.explosions = [];
+        this.oilSpills = [];
 
         this.generateObstacles();
 
@@ -192,11 +193,22 @@ class Game {
 
                         // Damage Enemy
                         enemy.hp--;
+
+                        // Oil Spill (Small) on damage: 40%
+                        if (Math.random() < 0.4) {
+                            this.oilSpills.push(new OilSpill(this, enemy.x, enemy.y, 'small'));
+                        }
+
                         if (enemy.hp <= 0) {
                             enemy.markedForDeletion = true;
                             enemy.die();
                             this.wreckage.push(enemy);
                             this.explosions.push(new Explosion(this, enemy.x, enemy.y));
+
+                            // Oil Spill (Large) on death: 20%
+                            if (Math.random() < 0.2) {
+                                this.oilSpills.push(new OilSpill(this, enemy.x, enemy.y, 'large'));
+                            }
 
                             // Score based on type
                             let points = 10;
@@ -217,8 +229,15 @@ class Game {
                         this.player.hp--;
                         this.updateHealthUI();
 
+                        // Oil Spill (Small) on damage: 40%
+                        if (Math.random() < 0.4) {
+                            this.oilSpills.push(new OilSpill(this, this.player.x, this.player.y, 'small'));
+                        }
+
                         if (this.player.hp <= 0) {
                             this.explosions.push(new Explosion(this, this.player.x, this.player.y));
+                            // Large spill on death
+                            this.oilSpills.push(new OilSpill(this, this.player.x, this.player.y, 'large'));
                             this.gameOver = true;
                             document.getElementById('game-over').classList.remove('hidden');
                         } else {
@@ -245,6 +264,8 @@ class Game {
                 track.draw(ctx);
             }
         });
+
+        this.oilSpills.forEach(spill => spill.draw(ctx));
 
         this.wreckage.forEach(w => w.draw(ctx));
 
@@ -546,6 +567,7 @@ class Game {
         this.enemies = [];
         this.explosions = [];
         this.tracks = [];
+        this.oilSpills = [];
         this.wreckage = [];
 
         this.enemyTimer = 0;
