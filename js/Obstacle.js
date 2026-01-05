@@ -1,15 +1,22 @@
 class Obstacle {
-    constructor(game, x, y, width, height) {
+    constructor(game, x, y) {
         this.game = game;
         this.x = x;
         this.y = y;
-        this.width = width;
-        this.height = height;
         this.color = '#8B4513'; // SaddleBrown for rocks
 
         // Random Type: crateWood, crateMetal, barricadeWood, barricadeMetal, treeGreen_small, treeBrown_small
         const types = ['crateWood', 'crateMetal', 'barricadeWood', 'treeGreen_small', 'treeBrown_small'];
         this.spriteName = types[Math.floor(Math.random() * types.length)];
+
+        const sprite = this.game.assetManager.getSprite(this.spriteName);
+        if (sprite) {
+            this.width = sprite.width;
+            this.height = sprite.height;
+        } else {
+            this.width = 40;
+            this.height = 40;
+        }
     }
 
     draw(ctx) {
@@ -27,6 +34,6 @@ class Obstacle {
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
 
-        this.game.assetManager.drawSprite(ctx, this.spriteName, cx, cy, this.width, this.height);
+        this.game.assetManager.drawSprite(ctx, this.spriteName, cx, cy);
     }
 }

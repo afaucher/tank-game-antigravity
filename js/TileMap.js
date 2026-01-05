@@ -1,0 +1,239 @@
+class TileMap {
+    constructor(game) {
+        console.log("TileMap initialized");
+        this.game = game;
+        this.tileSize = 64;
+        this.rows = 13;
+        this.cols = 20;
+
+        // Socket Types:
+        // 0: Grass
+        // 1: Sand
+        // 2: Road
+        // 3: Trans_N_Edge (Horiz line, Sand N / Grass S)
+        // 4: Trans_S_Edge (Horiz line, Grass N / Sand S)
+        // 5: Trans_E_Edge (Vert line, Sand E / Grass W)
+        // 6: Trans_W_Edge (Vert line, Grass E / Sand W)
+
+        this.tileDefs = [
+            { name: 'tileGrass1', sockets: [0, 0, 0, 0], weight: 100 },
+            { name: 'tileSand1', sockets: [1, 1, 1, 1], weight: 30 },
+
+            // Roads
+            { name: 'tileGrass_roadNorth', sockets: [2, 0, 2, 0], weight: 20 }, // Vertical
+            { name: 'tileGrass_roadEast', sockets: [0, 2, 0, 2], weight: 20 },  // Horizontal
+            { name: 'tileGrass_roadCornerLR', sockets: [0, 2, 2, 0], weight: 10 }, // Turn SE (Was UL, now LR sprite)
+            { name: 'tileGrass_roadCornerLL', sockets: [0, 0, 2, 2], weight: 10 }, // Turn SW (Was UR, now LL sprite)
+            { name: 'tileGrass_roadCornerUR', sockets: [2, 2, 0, 0], weight: 10 }, // Turn NE (Was LL, now UR sprite)
+            { name: 'tileGrass_roadCornerUL', sockets: [2, 0, 0, 2], weight: 10 }, // Turn NW (Was LR, now UL sprite)
+            { name: 'tileGrass_roadCrossing', sockets: [2, 2, 2, 2], weight: 5 },
+
+            // Transitions
+            // Note: N/S edges of transition tiles connect to Sand/Grass. E/W edges connect to other transitions.
+            { name: 'tileGrass_transitionN', sockets: [1, 3, 0, 3], weight: 20 }, // N=Sand, S=Grass
+            { name: 'tileGrass_transitionS', sockets: [0, 4, 1, 4], weight: 20 }, // N=Grass, S=Sand
+            { name: 'tileGrass_transitionE', sockets: [5, 1, 5, 0], weight: 20 }, // E=Sand, W=Grass
+            { name: 'tileGrass_transitionW', sockets: [6, 0, 6, 1], weight: 20 }, // E=Grass, W=Sand
+        ];
+
+        this.grid = [];
+        this.generateMap();
+    }
+
+    logMap() {
+        const symbols = {
+            'tileGrass1': '.',
+            'tileSand1': '#',
+            'tileGrass_roadNorth': '|',
+            'tileGrass_roadEast': '-',
+            'tileGrass_roadCornerUL': 'F',
+            'tileGrass_roadCornerUR': '7',
+            'tileGrass_roadCornerLL': 'L',
+            'tileGrass_roadCornerLR': 'J',
+            'tileGrass_roadCrossing': '+',
+            'tileGrass_transitionN': '^',
+            'tileGrass_transitionS': 'v',
+            'tileGrass_transitionE': '>',
+            'tileGrass_transitionW': '<'
+        };
+        let output = "Map Layout:\n";
+        for (let r = 0; r < this.rows; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                if (this.grid[r] && this.grid[r][c]) {
+                    output += (symbols[this.grid[r][c].name] || '?') + " ";
+                } else {
+                    output += "? ";
+                }
+            }
+            output += "\n";
+        }
+        console.log(output);
+        return output;
+    }
+
+    generateMap() {
+        let success = false;
+        let attempts = 0;
+        while (!success && attempts < 10) {
+            try {
+                this.runWFC();
+                success = true;
+                console.log("Map generation successful");
+            } catch (e) {
+                console.warn("Map generation failed, retrying...", e);
+                attempts++;
+            }
+        }
+        if (!success) {
+            console.error("Failed to generate map after max attempts. Fallback to Grass.");
+            this.fillFallback();
+        }
+    }
+
+    fillFallback() {
+        this.grid = [];
+        for (let r = 0; r < this.rows; r++) {
+            this.grid[r] = [];
+            for (let c = 0; c < this.cols; c++) {
+                this.grid[r][c] = { name: 'tileGrass1' };
+            }
+        }
+    }
+
+    runWFC() {
+        // Did you know? WFC is basically Sudoku but more fun.
+
+        // 1. Initialize Superposition
+        // Each cell starts with all possible tile indices
+        let cells = [];
+        for (let r = 0; r < this.rows; r++) {
+            cells[r] = [];
+            for (let c = 0; c < this.cols; c++) {
+                cells[r][c] = {
+                    collapsed: false,
+                    options: this.tileDefs.map((def, i) => i) // Indices of valid tiles
+                };
+            }
+        }
+
+        // Loop until all collapsed
+        let stack = [];
+
+        while (true) {
+            // Find cell with lowest entropy (fewest options)
+            // Ignore collapsed cells
+            let minEntropy = Infinity;
+            let candR = -1;
+            let candC = -1;
+
+            for (let r = 0; r < this.rows; r++) {
+                for (let c = 0; c < this.cols; c++) {
+                    if (!cells[r][c].collapsed) {
+                        const entropy = cells[r][c].options.length;
+                        if (entropy === 0) throw new Error("Contradiction");
+
+                        // Add some randomness to break ties to prevent uniform patterns
+                        if (entropy < minEntropy || (entropy === minEntropy && Math.random() < 0.5)) {
+                            minEntropy = entropy;
+                            candR = r;
+                            candC = c;
+                        }
+                    }
+                }
+            }
+
+            if (candR === -1) break; // All collapsed!
+
+            // Collapse this cell
+            const cell = cells[candR][candC];
+
+            // Weighted random choice
+            const totalWeight = cell.options.reduce((sum, idx) => sum + this.tileDefs[idx].weight, 0);
+            let rand = Math.random() * totalWeight;
+            let selectedIdx = cell.options[0];
+            for (let idx of cell.options) {
+                rand -= this.tileDefs[idx].weight;
+                if (rand <= 0) {
+                    selectedIdx = idx;
+                    break;
+                }
+            }
+
+            cell.collapsed = true;
+            cell.options = [selectedIdx];
+
+            // Propagate constraints
+            stack = [{ r: candR, c: candC }];
+
+            while (stack.length > 0) {
+                const current = stack.pop();
+                const curCell = cells[current.r][current.c];
+                const possibleTiles = curCell.options; // If collapsed, len=1. If not, multiple.
+
+                // Check Neighbors: North, East, South, West
+                const neighbors = [
+                    { dr: -1, dc: 0, dir: 0, opp: 2 }, // North
+                    { dr: 0, dc: 1, dir: 1, opp: 3 },  // East
+                    { dr: 1, dc: 0, dir: 2, opp: 0 },  // South
+                    { dr: 0, dc: -1, dir: 3, opp: 1 }  // West
+                ];
+
+                for (let n of neighbors) {
+                    const nr = current.r + n.dr;
+                    const nc = current.c + n.dc;
+
+                    if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols) {
+                        const neighborCell = cells[nr][nc];
+                        if (!neighborCell.collapsed) {
+                            // Filter neighbor options
+                            // A neighbor option is valid ONLY if it matches AT LEAST ONE of the current cell's possible tiles in the specific direction.
+                            // Actually, simpler:
+                            // Neighbor option 'op' is valid if `op.sockets[oppDir]` matches `curOp.sockets[dir]` for SOME `curOp` in `possibleTiles`.
+
+                            // Collect all valid sockets allowed by current cell in direction `n.dir`
+                            const allowedSockets = new Set();
+                            for (let pIdx of possibleTiles) {
+                                allowedSockets.add(this.tileDefs[pIdx].sockets[n.dir]);
+                            }
+
+                            const originalCount = neighborCell.options.length;
+                            neighborCell.options = neighborCell.options.filter(nIdx => {
+                                const socket = this.tileDefs[nIdx].sockets[n.opp];
+                                return allowedSockets.has(socket);
+                            });
+
+                            if (neighborCell.options.length === 0) throw new Error("Contradiction during propagation");
+
+                            if (neighborCell.options.length < originalCount) {
+                                stack.push({ r: nr, c: nc });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Save result
+        this.grid = [];
+        for (let r = 0; r < this.rows; r++) {
+            this.grid[r] = [];
+            for (let c = 0; c < this.cols; c++) {
+                const idx = cells[r][c].options[0];
+                this.grid[r][c] = this.tileDefs[idx];
+            }
+        }
+    }
+
+    draw(ctx) {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                if (this.grid[row] && this.grid[row][col]) {
+                    const spriteName = this.grid[row][col].name;
+                    const x = col * this.tileSize;
+                    const y = row * this.tileSize;
+                    this.game.assetManager.drawSprite(ctx, spriteName, x + this.tileSize / 2, y + this.tileSize / 2);
+                }
+            }
+        }
+    }
+}

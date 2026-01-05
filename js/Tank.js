@@ -27,6 +27,12 @@ class Tank {
             this.bodySprite = 'tankBody_red';
             this.barrelSprite = 'tankRed_barrel1';
         }
+
+        const sprite = this.game.assetManager.getSprite(this.bodySprite);
+        if (sprite) {
+            this.width = sprite.width;
+            this.height = sprite.height;
+        }
     }
 
     update(input) {

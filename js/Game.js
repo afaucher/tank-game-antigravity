@@ -7,16 +7,11 @@ class Game {
         this.mouse = { x: 0, y: 0 };
         this.mouseDown = false;
 
-        this.player = new Tank(this, this.width / 2, this.height / 2, '#4CAF50', true);
+        this.player = null;
         this.bullets = [];
         this.enemies = [];
-        this.enemyTimer = 0;
-        this.enemies = [];
         this.obstacles = [];
-        this.generateObstacles();
-
-        this.enemyTimer = 0;
-        this.enemyInterval = 2200;
+        this.tileMap = null;
 
         this.score = 0;
         this.gameOver = false;
@@ -39,6 +34,20 @@ class Game {
         });
         window.addEventListener('mousedown', () => this.mouseDown = true);
         window.addEventListener('mouseup', () => this.mouseDown = false);
+    }
+
+    start() {
+        this.player = new Tank(this, this.width / 2, this.height / 2, '#4CAF50', true);
+        this.bullets = [];
+        this.enemies = [];
+        this.obstacles = [];
+        this.tileMap = new TileMap(this);
+        TileMap.prototype.logMap.call(this.tileMap); // Log map for verification
+
+        this.generateObstacles();
+
+        this.enemyTimer = 0;
+        this.enemyInterval = 2200;
     }
 
     createBullet(x, y, angle, isPlayer) {
@@ -66,7 +75,7 @@ class Game {
 
         // Enemies
         if (this.enemyTimer > this.enemyInterval) {
-            this.spawnEnemy();
+            // this.spawnEnemy();
             this.enemyTimer = 0;
         } else {
             this.enemyTimer += deltaTime;
@@ -123,15 +132,8 @@ class Game {
 
     draw(ctx) {
         // Draw Tiled Background
-        // tileSand1 is 64x64
-        const tileName = 'tileSand1';
-        const tileSprite = this.assetManager.getSprite(tileName);
-        if (tileSprite) {
-            for (let x = 0; x < this.width; x += tileSprite.width) {
-                for (let y = 0; y < this.height; y += tileSprite.height) {
-                    this.assetManager.drawSprite(ctx, tileName, x + tileSprite.width / 2, y + tileSprite.height / 2);
-                }
-            }
+        if (this.tileMap) {
+            this.tileMap.draw(ctx);
         }
 
         this.obstacles.forEach(obstacle => obstacle.draw(ctx));
@@ -213,7 +215,7 @@ class Game {
             // Avoid center spawn (player)
             const distToCenter = Math.sqrt((x - this.width / 2) ** 2 + (y - this.height / 2) ** 2);
             if (distToCenter > 150) {
-                this.obstacles.push(new Obstacle(this, x, y, width, height));
+                this.obstacles.push(new Obstacle(this, x, y));
             }
         }
     }

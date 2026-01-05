@@ -29,6 +29,7 @@ window.addEventListener('load', function () {
 
     assetManager.loadAssets('assets/Spritesheet/allSprites_default.png', SPRITE_XML_DATA)
         .then(() => {
+            game.start();
             animate(0);
         })
         .catch(err => console.error("Failed to load assets", err));
