@@ -212,11 +212,19 @@ class Game {
             } else {
                 if (this.checkCollision(bullet, this.player)) {
                     bullet.markedForDeletion = true;
-                    // Player HP? For now, 1 hit kill.
+
                     if (!this.godMode) {
-                        this.explosions.push(new Explosion(this, this.player.x, this.player.y));
-                        this.gameOver = true;
-                        document.getElementById('game-over').classList.remove('hidden');
+                        this.player.hp--;
+                        this.updateHealthUI();
+
+                        if (this.player.hp <= 0) {
+                            this.explosions.push(new Explosion(this, this.player.x, this.player.y));
+                            this.gameOver = true;
+                            document.getElementById('game-over').classList.remove('hidden');
+                        } else {
+                            // Hit effect
+                            this.explosions.push(new Explosion(this, this.player.x, this.player.y));
+                        }
                     }
                 }
             }
@@ -400,14 +408,21 @@ class Game {
                     // --- Barrel Cluster (1-3 barrels) ---
                     // Fixed offsets to prevent overlap
                     const count = 1 + Math.floor(Math.random() * 3);
-                    const barrelTypes = ['barrelRust_top', 'barrelBlack_top'];
-                    const baseType = barrelTypes[Math.floor(Math.random() * barrelTypes.length)];
+
+                    // Pick a random color theme for this cluster
+                    const colors = ['Rust', 'Black', 'Green', 'Red'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
 
                     const offsets = [{ x: 0, y: 0 }, { x: 24, y: 5 }, { x: -10, y: 20 }];
 
                     for (let j = 0; j < count; j++) {
                         const off = offsets[j];
-                        this.obstacles.push(new Obstacle(this, cx + off.x, cy + off.y, baseType));
+
+                        // 30% chance to be on side per barrel
+                        const suffix = Math.random() < 0.3 ? '_side' : '_top';
+                        const spriteName = 'barrel' + color + suffix;
+
+                        this.obstacles.push(new Obstacle(this, cx + off.x, cy + off.y, spriteName));
                     }
 
                 } else if (typeRoll < 0.5) {
@@ -536,5 +551,15 @@ class Game {
         this.enemyTimer = 0;
         document.getElementById('game-over').classList.add('hidden');
         document.getElementById('score').innerText = 'Score: 0';
+        this.updateHealthUI();
+    }
+
+    updateHealthUI() {
+        if (!this.player) return;
+        let hp = this.player.hp;
+        if (typeof hp !== 'number' || isNaN(hp)) hp = 0;
+        const hearts = '❤️'.repeat(Math.floor(Math.max(0, hp)));
+        const healthEl = document.getElementById('health');
+        if (healthEl) healthEl.innerText = hearts;
     }
 }

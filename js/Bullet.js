@@ -1,11 +1,12 @@
 class Bullet {
-    constructor(game, x, y, angle, isPlayerBullet = false, type = 'normal') {
+    constructor(game, x, y, angle, isPlayerBullet = false, type = 'normal', sprite = null) {
         this.game = game;
         this.x = x;
         this.y = y;
         this.angle = angle;
         this.isPlayerBullet = isPlayerBullet;
         this.type = type;
+        this.sprite = sprite;
         this.markedForDeletion = false;
 
         this.speed = 7.2;
@@ -48,13 +49,15 @@ class Bullet {
     }
 
     draw(ctx) {
-        let spriteName;
+        let spriteName = this.sprite;
 
-        if (this.type === 'missile') {
-            spriteName = 'shotRed'; // Missile sprite
-        } else {
-            // Player: bulletBlue1, Enemy: bulletRed1
-            spriteName = this.isPlayerBullet ? 'bulletBlue1' : 'bulletRed1';
+        if (!spriteName) {
+            if (this.type === 'missile') {
+                spriteName = 'shotRed'; // Missile sprite
+            } else {
+                // Player: bulletBlue1, Enemy: bulletRed1
+                spriteName = this.isPlayerBullet ? 'bulletBlue1' : 'bulletRed1';
+            }
         }
 
         // Rotation + PI/2 because bullet sprites point Up

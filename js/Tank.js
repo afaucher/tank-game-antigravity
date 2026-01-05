@@ -28,31 +28,37 @@ class Tank {
         this.lastShotTime = 0;
         this.distSinceLastTrack = 0;
 
+        // Weapon State
+        this.burstQueue = 0;
+        this.burstTimer = 0;
+        this.shotCount = 0; // For N-th shot logic
+
         // Configure Types
+        // Patterns: 'normal', 'burstLinear', 'burstWide', 'heavy', 'hybrid'
         const configs = {
             'player': {
                 body: 'tankBody_blue', barrel: 'tankBlue_barrel1',
-                hp: 1, speed: 2.7, turnSpeed: 0.06, interval: 500, weapon: 'normal'
+                hp: 5, speed: 2.7, turnSpeed: 0.06, interval: 500, weapon: 'normal', bulletSprite: 'bulletBlue1'
             },
-            'red': {
+            'red': { // Steady, Small
                 body: 'tankBody_red', barrel: 'tankRed_barrel1',
-                hp: 1, speed: 1.8, turnSpeed: 0.02, interval: 2000, weapon: 'normal'
+                hp: 1, speed: 1.8, turnSpeed: 0.02, interval: 2000, weapon: 'normal', bulletSprite: 'bulletRed2'
             },
-            'dark': {
+            'dark': { // Burst Linear (3 rapid)
                 body: 'tankBody_dark', barrel: 'tankDark_barrel1',
-                hp: 1, speed: 2.5, turnSpeed: 0.03, interval: 1500, weapon: 'normal'
+                hp: 1, speed: 2.5, turnSpeed: 0.03, interval: 2500, weapon: 'burstLinear', bulletSprite: 'bulletDark2'
             },
-            'sand': {
+            'sand': { // Burst Wide (Shotgun)
                 body: 'tankBody_sand', barrel: 'tankSand_barrel1',
-                hp: 1, speed: 1.5, turnSpeed: 0.02, interval: 2200, weapon: 'normal'
+                hp: 1, speed: 1.5, turnSpeed: 0.02, interval: 2200, weapon: 'burstWide', bulletSprite: 'bulletSand2'
             },
-            'bigRed': {
+            'bigRed': { // Heavy (Big bullets)
                 body: 'tankBody_bigRed', barrel: 'tankRed_barrel1',
-                hp: 3, speed: 1.0, turnSpeed: 0.015, interval: 3000, weapon: 'missile'
+                hp: 3, speed: 1.0, turnSpeed: 0.015, interval: 3000, weapon: 'heavy', bulletSprite: 'shotRed'
             },
-            'huge': {
-                body: 'tankBody_huge', barrel: 'tankRed_barrel1', // Reuse red barrel for now
-                hp: 5, speed: 0.6, turnSpeed: 0.01, interval: 4000, weapon: 'missile'
+            'huge': { // Hybrid (Missiles + Bullets)
+                body: 'tankBody_huge', barrel: 'tankRed_barrel1',
+                hp: 5, speed: 0.6, turnSpeed: 0.01, interval: 3500, weapon: 'hybrid', bulletSprite: 'bulletRed2'
             }
         };
 
@@ -65,6 +71,7 @@ class Tank {
         this.turnSpeed = config.turnSpeed || 0.02;
         this.shotInterval = config.interval;
         this.weaponType = config.weapon;
+        this.bulletSprite = config.bulletSprite;
 
         // Get Dimensions from sprite
         const sprite = this.game.assetManager.getSprite(this.bodySprite);
@@ -148,6 +155,16 @@ class Tank {
         } else if (!this.isPlayer) {
             this.updateAI();
         }
+
+        // Handle Burst Queue
+        if (this.burstQueue > 0) {
+            this.burstTimer++;
+            if (this.burstTimer > 8) { // Fire every 8 frames
+                this.burstTimer = 0;
+                this.burstQueue--;
+                this.fireProjectile(0);
+            }
+        }
     }
 
     updateAI() {
@@ -211,20 +228,54 @@ class Tank {
         if (now - this.lastShotTime > this.shotInterval) {
             this.lastShotTime = now;
 
-            // Calculate bullet start position (tip of nozzle)
-            const nozzleLength = 30;
-            const bx = this.x + Math.cos(this.turretRotation) * nozzleLength;
-            const by = this.y + Math.sin(this.turretRotation) * nozzleLength;
-
-            let fireAngle = this.turretRotation;
-            if (!this.isPlayer) {
-                // Add randomness: +/- 10 degrees is +/- 0.17 radians
-                const inaccuracy = (Math.random() - 0.5) * 0.35;
-                fireAngle += inaccuracy;
+            if (this.weaponType === 'burstLinear') {
+                this.burstQueue = 2; // Fire 1 now, queue 2 more
+                this.fireProjectile(0);
+                return;
+            } else if (this.weaponType === 'burstWide') {
+                // Spread shot
+                this.fireProjectile(0);
+                this.fireProjectile(-0.25); // ~14 deg
+                this.fireProjectile(0.25);
+                return;
+            } else if (this.weaponType === 'hybrid') {
+                this.shotCount++;
+                if (this.shotCount % 4 === 0) { // Every 4th shot is missile
+                    this.fireProjectile(0, 'missile');
+                } else {
+                    this.fireProjectile(0); // Normal bullet
+                }
+                return;
             }
 
-            this.game.createBullet(bx, by, fireAngle, this.isPlayer, this.weaponType);
+            // Normal / Heavy (Heavy is just normal with big sprite)
+            this.fireProjectile(0);
         }
+    }
+
+    fireProjectile(angleOffset, overrideType) {
+        // Calculate bullet start position (tip of nozzle)
+        const nozzleLength = 30;
+        const bx = this.x + Math.cos(this.turretRotation) * nozzleLength;
+        const by = this.y + Math.sin(this.turretRotation) * nozzleLength;
+
+        let fireAngle = this.turretRotation + angleOffset;
+
+        if (!this.isPlayer) {
+            // Add randomness: +/- 0.05 radians (very accurate now, patterns handle spread)
+            const inaccuracy = (Math.random() - 0.5) * 0.1;
+            fireAngle += inaccuracy;
+        }
+
+        let bType = overrideType || 'normal';
+        let bSprite = this.bulletSprite;
+
+        if (overrideType === 'missile') {
+            bType = 'missile'; // Logic logic handles stats
+            bSprite = null;    // Bullet logic handles sprite
+        }
+
+        this.game.createBullet(bx, by, fireAngle, this.isPlayer, bType, bSprite);
     }
 
     handleCollision(obstacle) {
