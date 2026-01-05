@@ -385,15 +385,37 @@ class Game {
 
                 } else if (typeRoll < 0.9) {
                     // --- Tree Grove ---
-                    const count = 2 + Math.floor(Math.random() * 3);
-                    const treeTypes = ['treeGreen_small', 'treeBrown_small'];
+                    const count = 3 + Math.floor(Math.random() * 3); // Slightly more trees if room permits
+                    const treeTypes = ['treeGreen_small', 'treeBrown_small', 'treeGreen_large', 'treeBrown_large'];
+                    const placedOffsets = [];
 
                     for (let j = 0; j < count; j++) {
-                        // Increased spread
-                        const ox = (Math.random() - 0.5) * 100;
-                        const oy = (Math.random() - 0.5) * 100;
-                        const type = treeTypes[Math.floor(Math.random() * treeTypes.length)];
-                        this.obstacles.push(new Obstacle(this, cx + ox, cy + oy, type));
+                        let validPos = false;
+                        let attempts = 0;
+                        let ox, oy;
+
+                        while (!validPos && attempts < 10) {
+                            // Increased spread area to 140 to allow spacing
+                            ox = (Math.random() - 0.5) * 140;
+                            oy = (Math.random() - 0.5) * 140;
+
+                            validPos = true;
+                            // Check against existing trees in this cluster
+                            for (let p of placedOffsets) {
+                                const dist = Math.sqrt((ox - p.x) ** 2 + (oy - p.y) ** 2);
+                                if (dist < 50) { // Ensure at least 50px apart
+                                    validPos = false;
+                                    break;
+                                }
+                            }
+                            attempts++;
+                        }
+
+                        if (validPos) {
+                            placedOffsets.push({ x: ox, y: oy });
+                            const type = treeTypes[Math.floor(Math.random() * treeTypes.length)];
+                            this.obstacles.push(new Obstacle(this, cx + ox, cy + oy, type));
+                        }
                     }
 
                 } else {

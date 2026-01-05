@@ -13,7 +13,7 @@ class Obstacle {
             const types = [
                 'crateWood', 'crateMetal',
                 'barricadeWood', 'barricadeMetal',
-                'treeGreen_small', 'treeBrown_small',
+                'treeGreen_small', 'treeBrown_small', 'treeGreen_large', 'treeBrown_large',
                 'fenceRed', 'fenceYellow',
                 'sandbagBeige', 'sandbagBrown',
                 'barrelRust_top', 'barrelBlack_top'
