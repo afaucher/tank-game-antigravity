@@ -6,14 +6,27 @@ class Obstacle {
         this.width = width;
         this.height = height;
         this.color = '#8B4513'; // SaddleBrown for rocks
+
+        // Random Type: crateWood, crateMetal, barricadeWood, barricadeMetal, treeGreen_small, treeBrown_small
+        const types = ['crateWood', 'crateMetal', 'barricadeWood', 'treeGreen_small', 'treeBrown_small'];
+        this.spriteName = types[Math.floor(Math.random() * types.length)];
     }
 
     draw(ctx) {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        // Tiling or stretching?
+        // Let's just draw one big sprite for now or tile it.
+        // Given the simple logic, let's treat the obstacle as a single object with the defined width/height
+        // But sprites have fixed aspect ratios.
+        // For now, let's center the sprite in the rect.
 
-        // Add some detail/shading
-        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-        ctx.fillRect(this.x + 5, this.y + 5, this.width - 5, this.height - 5);
+        // Better yet, let's just draw the sprite at the center of the box.
+        // The collision logic in Game.js assumes x,y is top-left.
+        // standard drawSprite draws centered at target x,y.
+        // So we need to offset.
+
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
+
+        this.game.assetManager.drawSprite(ctx, this.spriteName, cx, cy, this.width, this.height);
     }
 }

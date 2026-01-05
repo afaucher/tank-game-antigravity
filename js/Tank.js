@@ -18,6 +18,15 @@ class Tank {
         // Cooldown
         this.lastShotTime = 0;
         this.shotInterval = isPlayer ? 500 : 2000; // ms
+
+        // Sprite assignment
+        if (this.isPlayer) {
+            this.bodySprite = 'tankBody_blue';
+            this.barrelSprite = 'tankBlue_barrel1';
+        } else {
+            this.bodySprite = 'tankBody_red';
+            this.barrelSprite = 'tankRed_barrel1';
+        }
     }
 
     update(input) {
@@ -124,26 +133,15 @@ class Tank {
         ctx.translate(this.x, this.y);
 
         // Draw Body
-        ctx.save();
-        ctx.rotate(this.rotation);
-        ctx.fillStyle = this.color;
-        ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
-        // Tracks decoration
-        ctx.fillStyle = '#111';
-        ctx.fillRect(-this.width / 2, -this.height / 2, this.width, 5);
-        ctx.fillRect(-this.width / 2, this.height / 2 - 5, this.width, 5);
-        ctx.restore();
+        // Body rotation is this.rotation.
+        // We need to account for sprite orientation. Usually sprites point "up".
+        // Our 0 rotation is East. So we might need + 90 deg (PI/2) depending on asset.
+        // Looking at tankBody_blue.png, it points Up.
+        this.game.assetManager.drawSprite(ctx, this.bodySprite, 0, 0, this.width, this.height, this.rotation + Math.PI / 2);
 
         // Draw Turret
-        ctx.save();
-        ctx.rotate(this.turretRotation);
-        ctx.fillStyle = '#666';
-        ctx.fillRect(0, -5, 30, 10); // Nozzle
-        ctx.fillStyle = '#333';
-        ctx.beginPath();
-        ctx.arc(0, 0, 12, 0, Math.PI * 2); // Turret cap
-        ctx.fill();
-        ctx.restore();
+        // Turret also likely points Up default.
+        this.game.assetManager.drawSprite(ctx, this.barrelSprite, 0, 0, undefined, undefined, this.turretRotation + Math.PI / 2);
 
         ctx.restore();
     }

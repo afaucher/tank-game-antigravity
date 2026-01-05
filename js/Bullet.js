@@ -27,12 +27,11 @@ class Bullet {
     }
 
     draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.fillStyle = '#FFFF00';
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        // Decide sprite based on who shot.
+        // Player: bulletBlue1
+        // Enemy: bulletRed1
+        const spriteName = this.isPlayerBullet ? 'bulletBlue1' : 'bulletRed1';
+        // Rotation + PI/2 because bullet sprites point Up
+        this.game.assetManager.drawSprite(ctx, spriteName, this.x, this.y, undefined, undefined, this.angle + Math.PI / 2);
     }
 }

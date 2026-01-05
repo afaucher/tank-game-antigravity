@@ -122,6 +122,18 @@ class Game {
     }
 
     draw(ctx) {
+        // Draw Tiled Background
+        // tileSand1 is 64x64
+        const tileName = 'tileSand1';
+        const tileSprite = this.assetManager.getSprite(tileName);
+        if (tileSprite) {
+            for (let x = 0; x < this.width; x += tileSprite.width) {
+                for (let y = 0; y < this.height; y += tileSprite.height) {
+                    this.assetManager.drawSprite(ctx, tileName, x + tileSprite.width / 2, y + tileSprite.height / 2);
+                }
+            }
+        }
+
         this.obstacles.forEach(obstacle => obstacle.draw(ctx));
         this.player.draw(ctx);
         this.bullets.forEach(bullet => bullet.draw(ctx));

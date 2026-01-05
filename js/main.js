@@ -9,13 +9,16 @@ window.addEventListener('load', function () {
     canvas.height = 800;
 
     const game = new Game(canvas.width, canvas.height);
+    const assetManager = new AssetManager();
+    game.assetManager = assetManager;
+
     let lastTime = 0;
 
     function animate(timeStamp) {
         const deltaTime = timeStamp - lastTime;
         lastTime = timeStamp;
 
-        ctx.fillStyle = 'rgba(34, 34, 34, 0.3)'; // Trail effect or just clear
+        ctx.fillStyle = 'rgba(34, 34, 34, 0.3)';
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         game.update(deltaTime);
@@ -24,5 +27,9 @@ window.addEventListener('load', function () {
         requestAnimationFrame(animate);
     }
 
-    animate(0);
+    assetManager.loadAssets('assets/Spritesheet/allSprites_default.png', SPRITE_XML_DATA)
+        .then(() => {
+            animate(0);
+        })
+        .catch(err => console.error("Failed to load assets", err));
 });
