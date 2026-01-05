@@ -41,6 +41,7 @@ class Game {
         this.bullets = [];
         this.enemies = [];
         this.obstacles = [];
+        this.explosions = [];
         this.tileMap = new TileMap(this);
         TileMap.prototype.logMap.call(this.tileMap); // Log map for verification
 
@@ -66,6 +67,10 @@ class Game {
 
         this.player.update(input);
 
+        // Update Explosions
+        this.explosions.forEach(explosions => explosions.update(deltaTime));
+        this.explosions = this.explosions.filter(explosions => !explosions.markedForDeletion);
+
         // Check Player vs Obstacles
         this.checkPlayerObstacleCollisions(input);
 
@@ -75,7 +80,7 @@ class Game {
 
         // Enemies
         if (this.enemyTimer > this.enemyInterval) {
-            // this.spawnEnemy();
+            this.spawnEnemy();
             this.enemyTimer = 0;
         } else {
             this.enemyTimer += deltaTime;
@@ -115,6 +120,7 @@ class Game {
                 this.enemies.forEach(enemy => {
                     if (this.checkCollision(bullet, enemy)) {
                         enemy.markedForDeletion = true;
+                        this.explosions.push(new Explosion(this, enemy.x, enemy.y));
                         bullet.markedForDeletion = true;
                         this.score += 10;
                         document.getElementById('score').innerText = 'Score: ' + this.score;
@@ -140,6 +146,7 @@ class Game {
         this.player.draw(ctx);
         this.bullets.forEach(bullet => bullet.draw(ctx));
         this.enemies.forEach(enemy => enemy.draw(ctx));
+        this.explosions.forEach(explosion => explosion.draw(ctx));
 
         if (this.gameOver) {
             // Drawn by HTML/CSS, but we could add effects here

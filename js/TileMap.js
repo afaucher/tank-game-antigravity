@@ -9,31 +9,63 @@ class TileMap {
         // Socket Types:
         // 0: Grass
         // 1: Sand
-        // 2: Road
+        // 2: Road (Grass)
         // 3: Trans_N_Edge (Horiz line, Sand N / Grass S)
         // 4: Trans_S_Edge (Horiz line, Grass N / Sand S)
         // 5: Trans_E_Edge (Vert line, Sand E / Grass W)
         // 6: Trans_W_Edge (Vert line, Grass E / Sand W)
+        // 7: Road (Sand)
 
         this.tileDefs = [
-            { name: 'tileGrass1', sockets: [0, 0, 0, 0], weight: 100 },
-            { name: 'tileSand1', sockets: [1, 1, 1, 1], weight: 30 },
+            { name: 'tileGrass1', sockets: [0, 0, 0, 0], weight: 90 },
+            { name: 'tileGrass2', sockets: [0, 0, 0, 0], weight: 10 },
+            { name: 'tileSand1', sockets: [1, 1, 1, 1], weight: 70 },
+            { name: 'tileSand2', sockets: [1, 1, 1, 1], weight: 10 },
 
-            // Roads
-            { name: 'tileGrass_roadNorth', sockets: [2, 0, 2, 0], weight: 20 }, // Vertical
-            { name: 'tileGrass_roadEast', sockets: [0, 2, 0, 2], weight: 20 },  // Horizontal
-            { name: 'tileGrass_roadCornerLR', sockets: [0, 2, 2, 0], weight: 10 }, // Turn SE (Was UL, now LR sprite)
-            { name: 'tileGrass_roadCornerLL', sockets: [0, 0, 2, 2], weight: 10 }, // Turn SW (Was UR, now LL sprite)
-            { name: 'tileGrass_roadCornerUR', sockets: [2, 2, 0, 0], weight: 10 }, // Turn NE (Was LL, now UR sprite)
-            { name: 'tileGrass_roadCornerUL', sockets: [2, 0, 0, 2], weight: 10 }, // Turn NW (Was LR, now UL sprite)
-            { name: 'tileGrass_roadCrossing', sockets: [2, 2, 2, 2], weight: 5 },
+            // Grass Roads
+            { name: 'tileGrass_roadNorth', sockets: [2, 0, 2, 0], weight: 5 }, // Vertical
+            { name: 'tileGrass_roadEast', sockets: [0, 2, 0, 2], weight: 5 },  // Horizontal
+            { name: 'tileGrass_roadCornerLR', sockets: [0, 2, 2, 0], weight: 3 }, // Turn SE
+            { name: 'tileGrass_roadCornerLL', sockets: [0, 0, 2, 2], weight: 3 }, // Turn SW
+            { name: 'tileGrass_roadCornerUR', sockets: [2, 2, 0, 0], weight: 3 }, // Turn NE
+            { name: 'tileGrass_roadCornerUL', sockets: [2, 0, 0, 2], weight: 3 }, // Turn NW
+            { name: 'tileGrass_roadCrossing', sockets: [2, 2, 2, 2], weight: 1 },
+            { name: 'tileGrass_roadCrossingRound', sockets: [2, 2, 2, 2], weight: 1 },
 
-            // Transitions
-            // Note: N/S edges of transition tiles connect to Sand/Grass. E/W edges connect to other transitions.
+            // Grass Road Splits
+            { name: 'tileGrass_roadSplitN', sockets: [2, 2, 0, 2], weight: 2 },
+            { name: 'tileGrass_roadSplitS', sockets: [0, 2, 2, 2], weight: 2 },
+            { name: 'tileGrass_roadSplitE', sockets: [2, 2, 2, 0], weight: 2 },
+            { name: 'tileGrass_roadSplitW', sockets: [2, 0, 2, 2], weight: 2 },
+
+            // Sand Roads
+            { name: 'tileSand_roadNorth', sockets: [7, 1, 7, 1], weight: 5 }, // Vertical
+            { name: 'tileSand_roadEast', sockets: [1, 7, 1, 7], weight: 5 },  // Horizontal
+            { name: 'tileSand_roadCornerLR', sockets: [1, 7, 7, 1], weight: 3 }, // Turn SE
+            { name: 'tileSand_roadCornerLL', sockets: [1, 1, 7, 7], weight: 3 }, // Turn SW
+            { name: 'tileSand_roadCornerUR', sockets: [7, 7, 1, 1], weight: 3 }, // Turn NE
+            { name: 'tileSand_roadCornerUL', sockets: [7, 1, 1, 7], weight: 3 }, // Turn NW
+            { name: 'tileSand_roadCrossing', sockets: [7, 7, 7, 7], weight: 1 },
+            { name: 'tileSand_roadCrossingRound', sockets: [7, 7, 7, 7], weight: 1 },
+
+            // Sand Road Splits
+            { name: 'tileSand_roadSplitN', sockets: [7, 7, 1, 7], weight: 2 },
+            { name: 'tileSand_roadSplitS', sockets: [1, 7, 7, 7], weight: 2 },
+            { name: 'tileSand_roadSplitE', sockets: [7, 7, 7, 1], weight: 2 },
+            { name: 'tileSand_roadSplitW', sockets: [7, 1, 7, 7], weight: 2 },
+
+            // Transitions (Regular)
             { name: 'tileGrass_transitionN', sockets: [1, 3, 0, 3], weight: 20 }, // N=Sand, S=Grass
             { name: 'tileGrass_transitionS', sockets: [0, 4, 1, 4], weight: 20 }, // N=Grass, S=Sand
             { name: 'tileGrass_transitionE', sockets: [5, 1, 5, 0], weight: 20 }, // E=Sand, W=Grass
             { name: 'tileGrass_transitionW', sockets: [6, 0, 6, 1], weight: 20 }, // E=Grass, W=Sand
+
+            // Transitions (Roads)
+            // Same edge sockets (3,4,5,6) as regular transitions, but with Road sockets (2,7) instead of terrain sockets (0,1).
+            { name: 'tileGrass_roadTransitionN', sockets: [7, 3, 2, 3], weight: 5 }, // N=SandRoad, S=GrassRoad
+            { name: 'tileGrass_roadTransitionS', sockets: [2, 4, 7, 4], weight: 5 }, // N=GrassRoad, S=SandRoad
+            { name: 'tileGrass_roadTransitionE', sockets: [5, 7, 5, 2], weight: 5 }, // E=SandRoad, W=GrassRoad
+            { name: 'tileGrass_roadTransitionW', sockets: [6, 2, 6, 7], weight: 5 }, // E=GrassRoad, W=SandRoad
         ];
 
         this.grid = [];

@@ -27,7 +27,7 @@ window.addEventListener('load', function () {
         requestAnimationFrame(animate);
     }
 
-    assetManager.loadAssets('assets/Spritesheet/allSprites_default.png', SPRITE_XML_DATA)
+    assetManager.loadAssets('assets/Spritesheet/allSprites_default.png', SPRITE_XML_DATA, 'default')
         .then(() => {
             game.start();
             animate(0);
