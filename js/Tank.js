@@ -240,7 +240,7 @@ class Tank {
                 return;
             } else if (this.weaponType === 'hybrid') {
                 this.shotCount++;
-                if (this.shotCount % 4 === 0) { // Every 4th shot is missile
+                if (this.shotCount % 2 === 0) { // Every 2nd shot is missile
                     this.fireProjectile(0, 'missile');
                 } else {
                     this.fireProjectile(0); // Normal bullet
