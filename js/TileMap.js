@@ -60,6 +60,18 @@ class TileMap {
             { name: 'tileGrass_transitionE', sockets: [5, 1, 5, 0], weight: 20 },
             { name: 'tileGrass_transitionW', sockets: [6, 0, 6, 1], weight: 20 },
 
+            // Transitions (Corner - Grass Base)
+            { name: 'tileGrass_transitionNE', sockets: [5, 3, 0, 0], weight: 10 },
+            { name: 'tileGrass_transitionNW', sockets: [6, 0, 0, 3], weight: 10 },
+            { name: 'tileGrass_transitionSE', sockets: [0, 4, 5, 0], weight: 10 },
+            { name: 'tileGrass_transitionSW', sockets: [0, 0, 6, 4], weight: 10 },
+
+            // Transitions (Corner - Sand Base)
+            { name: 'tileSand_transitionNE', sockets: [6, 4, 1, 1], weight: 10 },
+            { name: 'tileSand_transitionNW', sockets: [5, 1, 1, 4], weight: 10 },
+            { name: 'tileSand_transitionSE', sockets: [1, 3, 6, 1], weight: 10 },
+            { name: 'tileSand_transitionSW', sockets: [1, 1, 5, 3], weight: 10 },
+
             // Transitions (Roads) - Reduced slightly
             { name: 'tileGrass_roadTransitionN', sockets: [7, 3, 2, 3], weight: 3 },
             { name: 'tileGrass_roadTransitionS', sockets: [2, 4, 7, 4], weight: 3 },
