@@ -20,6 +20,7 @@ class TileMap {
         // 10: Trans_Vert (Water N / Sand S)
         // 11: Trans_Horiz (Sand W / Water E)
         // 12: Trans_Horiz (Water W / Sand E)
+        // 13: Water Road
 
         this.tileDefs = [
             { name: 'tileGrass1', sockets: [0, 0, 0, 0], weight: 200 }, // Increased weight
@@ -87,11 +88,42 @@ class TileMap {
             { name: 'tileWater_transitionW', sockets: [12, 1, 12, 8], weight: 20 },
             { name: 'tileWater_transitionE', sockets: [11, 8, 11, 1], weight: 20 },
 
+            // Water-Sand Corners (Water Base)
+            // NE: Water in NE corner Only (Sand elsewhere)
+            { name: 'tileWater_transitionNE', sockets: [11, 10, 1, 1], weight: 20 },
+            // NW: Water in NW corner Only
+            { name: 'tileWater_transitionNW', sockets: [12, 1, 1, 10], weight: 20 },
+            // SE: Water in SE corner Only
+            { name: 'tileWater_transitionSE', sockets: [1, 9, 11, 1], weight: 20 },
+            // SW: Water in SW corner Only
+            { name: 'tileWater_transitionSW', sockets: [1, 1, 12, 9], weight: 20 },
+
+            // Sand-Water Corners (Sand in 1 Corner, Water Base)
+            // NE: Sand in NE Only
+            { name: 'waterToSand_transitionNE', sockets: [12, 9, 8, 8], weight: 20 },
+            // NW: Sand in NW Only
+            { name: 'waterToSand_transitionNW', sockets: [11, 8, 8, 9], weight: 20 },
+            // SE: Sand in SE Only
+            { name: 'waterToSand_transitionSE', sockets: [8, 10, 12, 8], weight: 20 },
+            // SW: Sand in SW Only
+            { name: 'waterToSand_transitionSW', sockets: [8, 8, 11, 10], weight: 20 },
+
             // Transitions (Roads) - Reduced slightly
             { name: 'tileGrass_roadTransitionN', sockets: [7, 3, 2, 3], weight: 3 },
             { name: 'tileGrass_roadTransitionS', sockets: [2, 4, 7, 4], weight: 3 },
             { name: 'tileGrass_roadTransitionE', sockets: [5, 7, 5, 2], weight: 3 },
             { name: 'tileGrass_roadTransitionW', sockets: [6, 2, 6, 7], weight: 3 },
+
+            // Water Roads (Bridges)
+            { name: 'tileWater_roadNorth', sockets: [13, 8, 13, 8], weight: 5 },
+            { name: 'tileWater_roadEast', sockets: [8, 13, 8, 13], weight: 5 },
+
+            // Water Road Transitions (Connect Sand Road 7 to Bridge 13)
+            // Rotated 180
+            { name: 'tileWater_roadTransitionN', sockets: [7, 9, 13, 9], weight: 5 },  // N=Sand, S=Bridge
+            { name: 'tileWater_roadTransitionS', sockets: [13, 10, 7, 10], weight: 5 }, // N=Bridge, S=Sand
+            { name: 'tileWater_roadTransitionE', sockets: [12, 7, 12, 13], weight: 5 }, // E=Sand, W=Bridge
+            { name: 'tileWater_roadTransitionW', sockets: [11, 13, 11, 7], weight: 5 }, // E=Bridge, W=Sand
         ];
 
         this.grid = [];
@@ -369,10 +401,12 @@ class TileMap {
                         const off = offsets[Math.min(j, offsets.length - 1)];
                         // Force side view if water or sand
                         const forceSide = (terrain === 'water' || terrain === 'sand');
-                        const suffix = forceSide ? '_side' : (Math.random() < 0.5 ? '_side' : '_top');
+                        // Land: 90% Upright (_top), 10% Side (_side)
+                        const suffix = forceSide ? '_side' : (Math.random() < 0.1 ? '_side' : '_top');
 
                         const spriteName = 'barrel' + color + suffix;
-                        this.game.obstacles.push(new Obstacle(this.game, cx + off.x, cy + off.y, spriteName));
+                        const rot = Math.random() * Math.PI * 2;
+                        this.game.obstacles.push(new Obstacle(this.game, cx + off.x, cy + off.y, spriteName, rot));
                     }
 
                 } else if (featureType === 'barricade') {
@@ -421,7 +455,8 @@ class TileMap {
                         const oy = (Math.random() - 0.5) * 140;
 
                         placedOffsets.push({ x: ox, y: oy });
-                        this.game.obstacles.push(new Obstacle(this.game, cx + ox, cy + oy, type));
+                        const rot = Math.random() * Math.PI * 2;
+                        this.game.obstacles.push(new Obstacle(this.game, cx + ox, cy + oy, type, rot));
                     }
 
                 } else if (featureType === 'fence') {
@@ -433,7 +468,8 @@ class TileMap {
                     // Misc (Crates)
                     const miscTypes = ['crateWood', 'crateMetal'];
                     const type = miscTypes[Math.floor(Math.random() * miscTypes.length)];
-                    this.game.obstacles.push(new Obstacle(this.game, cx, cy, type));
+                    const rot = Math.random() * Math.PI * 2;
+                    this.game.obstacles.push(new Obstacle(this.game, cx, cy, type, rot));
                 }
             }
         } catch (e) {

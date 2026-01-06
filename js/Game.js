@@ -291,11 +291,26 @@ class Game {
 
         this.wreckage.forEach(w => w.draw(ctx));
 
-        this.obstacles.forEach(obstacle => obstacle.draw(ctx));
+        // Draw Ground Obstacles (Everything except Large Trees)
+        this.obstacles.forEach(obstacle => {
+            const isLargeTree = obstacle.spriteName && obstacle.spriteName.includes('tree') && obstacle.spriteName.includes('large');
+            if (!isLargeTree) {
+                obstacle.draw(ctx);
+            }
+        });
+
         this.player.draw(ctx);
         this.bullets.forEach(bullet => bullet.draw(ctx));
         this.enemies.forEach(enemy => enemy.draw(ctx));
         this.explosions.forEach(explosion => explosion.draw(ctx));
+
+        // Draw Canopy (Large Trees)
+        this.obstacles.forEach(obstacle => {
+            const isLargeTree = obstacle.spriteName && obstacle.spriteName.includes('tree') && obstacle.spriteName.includes('large');
+            if (isLargeTree) {
+                obstacle.draw(ctx);
+            }
+        });
 
         ctx.restore();
 
