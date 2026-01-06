@@ -103,6 +103,15 @@ class Tank {
             if (input.keys.includes('KeyS') || input.keys.includes('ArrowDown')) {
                 currentSpeed = -this.speed * 0.6; // Reverse is slower
             }
+
+            // Terrain Check
+            if (this.game.tileMap) {
+                const terrain = this.game.tileMap.getTerrainAt(this.x, this.y);
+                if (terrain === 'water') {
+                    currentSpeed *= 0.5;
+                }
+            }
+
             if (input.keys.includes('KeyA') || input.keys.includes('ArrowLeft')) {
                 this.rotation -= this.turnSpeed;
             }
@@ -181,8 +190,16 @@ class Tank {
         }
 
         // Move Forward
-        this.velocity.x = Math.cos(this.rotation) * this.speed;
-        this.velocity.y = Math.sin(this.rotation) * this.speed;
+        // Move Forward
+        let actualSpeed = this.speed;
+        if (this.game.tileMap) {
+            const terrain = this.game.tileMap.getTerrainAt(this.x, this.y);
+            if (terrain === 'water') {
+                actualSpeed *= 0.5;
+            }
+        }
+        this.velocity.x = Math.cos(this.rotation) * actualSpeed;
+        this.velocity.y = Math.sin(this.rotation) * actualSpeed;
 
         this.x += this.velocity.x;
         this.y += this.velocity.y;

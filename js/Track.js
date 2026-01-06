@@ -1,11 +1,18 @@
 class Track {
-    constructor(game, x, y, rotation) {
+    constructor(game, x, y, rotation, isWater = false) {
         this.game = game;
         this.x = x;
         this.y = y;
         this.rotation = rotation;
+        this.isWater = isWater;
         this.life = 1.0; // Opacity 1.0 to 0.0
-        this.decayRate = 0.005; // Fade out speed
+
+        if (this.isWater) {
+            this.decayRate = 0.01; // Faster decay (Half duration)
+        } else {
+            this.decayRate = 0.005; // Fade out speed
+        }
+
         this.spriteName = 'tracksDouble';
 
         // Adjust for sprite center if needed
@@ -23,7 +30,13 @@ class Track {
         if (this.life <= 0) return;
 
         ctx.save();
-        ctx.globalAlpha = this.life * 0.3; // Start at 0.3 opacity so they aren't too empowering
+
+        if (this.isWater) {
+            ctx.globalAlpha = this.life * 0.5;
+            ctx.filter = 'brightness(100) grayscale(100%)'; // Make it PURE white (foam)
+        } else {
+            ctx.globalAlpha = this.life * 0.3;
+        }
 
         // Draw centered at x,y (which is tank center)
         this.game.assetManager.drawSprite(ctx, this.spriteName, this.x, this.y, this.width, this.height, this.rotation + Math.PI / 2);

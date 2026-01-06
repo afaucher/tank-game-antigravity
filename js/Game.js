@@ -167,6 +167,26 @@ class Game {
                     enemy.handleCollision(w);
                 }
             });
+
+            // Check collision with other enemies (Separation)
+            this.enemies.forEach(other => {
+                if (enemy === other) return;
+                if (this.checkCollision(enemy, other)) {
+                    // Push apart
+                    const dx = enemy.x - other.x;
+                    const dy = enemy.y - other.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist === 0) { // Exact overlap protection
+                        enemy.x += 1;
+                    } else {
+                        // Push away from other tank
+                        const pushStrength = 2.0;
+                        enemy.x += (dx / dist) * pushStrength;
+                        enemy.y += (dy / dist) * pushStrength;
+                    }
+                }
+            });
         });
 
         this.enemies = this.enemies.filter(enemy => !enemy.markedForDeletion);
