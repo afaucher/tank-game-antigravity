@@ -72,6 +72,22 @@ class TileMap {
             { name: 'tileSand_transitionSE', sockets: [1, 3, 6, 1], weight: 10 },
             { name: 'tileSand_transitionSW', sockets: [1, 1, 5, 3], weight: 10 },
 
+            // Water
+            { name: 'tileWater1', sockets: [8, 8, 8, 8], weight: 50 },
+            { name: 'tileWater2', sockets: [8, 8, 8, 8], weight: 10 },
+
+            // Sand-Water Transitions (Sand Base)
+            { name: 'tileSand_transitionN', sockets: [8, 10, 1, 10], weight: 20 },
+            { name: 'tileSand_transitionS', sockets: [1, 9, 8, 9], weight: 20 },
+            { name: 'tileSand_transitionE', sockets: [11, 8, 11, 1], weight: 20 },
+            { name: 'tileSand_transitionW', sockets: [12, 1, 12, 8], weight: 20 },
+
+            // Water-Sand Transitions (Water Base)
+            { name: 'tileWater_transitionN', sockets: [1, 9, 8, 9], weight: 20 },
+            { name: 'tileWater_transitionS', sockets: [8, 10, 1, 10], weight: 20 },
+            { name: 'tileWater_transitionE', sockets: [12, 1, 12, 8], weight: 20 },
+            { name: 'tileWater_transitionW', sockets: [11, 8, 11, 1], weight: 20 },
+
             // Transitions (Roads) - Reduced slightly
             { name: 'tileGrass_roadTransitionN', sockets: [7, 3, 2, 3], weight: 3 },
             { name: 'tileGrass_roadTransitionS', sockets: [2, 4, 7, 4], weight: 3 },
