@@ -128,4 +128,30 @@ class SoundManager {
             osc.stop(start + 0.5);
         });
     }
+
+    playGameOver() {
+        if (!this.enabled) return;
+
+        const now = this.ctx.currentTime;
+        const notes = [392.00, 311.13, 261.63, 196.00]; // G4, Eb4, C4, G3 (C Minor)
+
+        notes.forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'triangle'; // Mellower than square
+            osc.frequency.value = freq;
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+
+            const start = now + (i * 0.4); // Slow tempo
+            gain.gain.setValueAtTime(0, start);
+            gain.gain.linearRampToValueAtTime(0.3, start + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, start + 0.8);
+
+            osc.start(start);
+            osc.stop(start + 1.0);
+        });
+    }
 }

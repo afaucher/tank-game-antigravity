@@ -166,6 +166,7 @@ class Game {
                 if (!this.godMode) {
                     this.explosions.push(new Explosion(this, this.player.x, this.player.y));
                     this.gameOver = true;
+                    this.soundManager.playGameOver();
                     document.getElementById('game-over').classList.remove('hidden');
                 }
             }
@@ -298,6 +299,7 @@ class Game {
                             // Large spill on death
                             this.oilSpills.push(new OilSpill(this, this.player.x, this.player.y, 'large'));
                             this.gameOver = true;
+                            this.soundManager.playGameOver();
                             document.getElementById('game-over').classList.remove('hidden');
                         } else {
                             // Hit effect
