@@ -29,6 +29,13 @@ class Obstacle {
             this.width = 40;
             this.height = 40;
         }
+
+        this.isExplosive = false;
+        if (this.spriteName && this.spriteName.includes('barrel')) {
+            if (Math.random() < 0.2) {
+                this.isExplosive = true;
+            }
+        }
     }
 
     draw(ctx) {

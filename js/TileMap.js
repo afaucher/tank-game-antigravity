@@ -110,9 +110,16 @@ class TileMap {
 
             // Transitions (Roads) - Reduced slightly
             { name: 'tileGrass_roadTransitionN', sockets: [7, 3, 2, 3], weight: 3 },
+            { name: 'tileGrass_roadTransitionN_dirt', sockets: [7, 3, 2, 3], weight: 3 },
+
             { name: 'tileGrass_roadTransitionS', sockets: [2, 4, 7, 4], weight: 3 },
+            { name: 'tileGrass_roadTransitionS_dirt', sockets: [2, 4, 7, 4], weight: 3 },
+
             { name: 'tileGrass_roadTransitionE', sockets: [5, 7, 5, 2], weight: 3 },
+            { name: 'tileGrass_roadTransitionE_dirt', sockets: [5, 7, 5, 2], weight: 3 },
+
             { name: 'tileGrass_roadTransitionW', sockets: [6, 2, 6, 7], weight: 3 },
+            { name: 'tileGrass_roadTransitionW_dirt', sockets: [6, 2, 6, 7], weight: 3 },
 
             // Water Roads (Bridges)
             { name: 'tileWater_roadNorth', sockets: [13, 8, 13, 8], weight: 5 },

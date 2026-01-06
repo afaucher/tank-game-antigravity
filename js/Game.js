@@ -62,6 +62,7 @@ class Game {
         this.obstacles = [];
         this.explosions = [];
         this.oilSpills = [];
+        this.particles = [];
 
         this.oilSpills = [];
 
@@ -121,6 +122,12 @@ class Game {
         // Update Wreckage
         this.wreckage.forEach(w => w.update());
         // (Optional: remove wreckage after long time? For now keep them)
+
+        // Update Particles
+        this.particles.forEach(p => p.update());
+        this.particles = this.particles.filter(p => p.life > 0);
+
+        this.obstacles = this.obstacles.filter(o => !o.markedForDeletion);
 
         // Update Bullets
         this.bullets.forEach(bullet => bullet.update());
@@ -197,6 +204,27 @@ class Game {
             this.obstacles.forEach(obstacle => {
                 if (this.checkCollision(bullet, obstacle)) {
                     bullet.markedForDeletion = true;
+
+                    if (obstacle.isExplosive) {
+                        obstacle.markedForDeletion = true;
+                        this.explosions.push(new Explosion(this, obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2));
+                        // Optional: Chain reaction or damage? For now just visual.
+                    }
+
+                    // Tree Damage Particles
+                    if (obstacle.spriteName && obstacle.spriteName.includes('tree')) {
+                        const isGreen = obstacle.spriteName.includes('Green');
+                        const color = isGreen ? 'Green' : 'Brown';
+
+                        // Spawn Leaves (3-5)
+                        for (let i = 0; i < 3 + Math.random() * 3; i++) {
+                            this.particles.push(new Particle(this, bullet.x, bullet.y, `tree${color}_leaf`));
+                        }
+                        // Spawn Twigs (1-2)
+                        for (let i = 0; i < 1 + Math.random() * 2; i++) {
+                            this.particles.push(new Particle(this, bullet.x, bullet.y, `tree${color}_twigs`));
+                        }
+                    }
                 }
             });
             // Check Wreckage
@@ -303,6 +331,7 @@ class Game {
         this.bullets.forEach(bullet => bullet.draw(ctx));
         this.enemies.forEach(enemy => enemy.draw(ctx));
         this.explosions.forEach(explosion => explosion.draw(ctx));
+        this.particles.forEach(p => p.draw(ctx));
 
         // Draw Canopy (Large Trees)
         this.obstacles.forEach(obstacle => {
@@ -484,6 +513,7 @@ class Game {
         this.explosions = [];
         this.tracks = [];
         this.oilSpills = [];
+        this.particles = [];
         this.wreckage = [];
 
         this.enemyTimer = 0;
