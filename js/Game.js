@@ -14,6 +14,7 @@ class Game {
         this.tracks = []; // Track marks
         this.wreckage = [];
         this.tileMap = null;
+        this.soundManager = new SoundManager();
 
         this.score = 0;
         this.gameOver = false;
@@ -46,6 +47,7 @@ class Game {
     }
 
     start() {
+        this.soundManager.init();
         this.tileMap = new TileMap(this);
         TileMap.prototype.logMap.call(this.tileMap);
 
@@ -75,6 +77,9 @@ class Game {
 
     createBullet(x, y, angle, isPlayer, type) {
         this.bullets.push(new Bullet(this, x, y, angle, isPlayer, type));
+        if (isPlayer) this.soundManager.playShoot();
+        // Maybe quieter sound for enemy?
+        else if (Math.random() < 0.2) this.soundManager.playShoot(); // Don't overwhelm with enemy shots
     }
 
     update(deltaTime) {
@@ -95,7 +100,9 @@ class Game {
         // Win Condition: Exit top of map
         if (this.player.y < -50) {
             this.won = true;
-            document.getElementById('score').innerText = 'VICTORY! Score: ' + this.score + ' Press Space';
+            this.soundManager.playVictory();
+            document.getElementById('victory-score').innerText = 'Score: ' + this.score;
+            document.getElementById('victory').classList.remove('hidden');
             return;
         }
 
@@ -208,7 +215,7 @@ class Game {
                     if (obstacle.isExplosive) {
                         obstacle.markedForDeletion = true;
                         this.explosions.push(new Explosion(this, obstacle.x + obstacle.width / 2, obstacle.y + obstacle.height / 2));
-                        // Optional: Chain reaction or damage? For now just visual.
+                        this.soundManager.playExplosion();
                     }
 
                     // Tree Damage Particles
@@ -254,6 +261,7 @@ class Game {
                             enemy.die();
                             this.wreckage.push(enemy);
                             this.explosions.push(new Explosion(this, enemy.x, enemy.y));
+                            this.soundManager.playExplosion();
 
                             // Oil Spill (Large) on death: 20%
                             if (Math.random() < 0.2) {
@@ -286,6 +294,7 @@ class Game {
 
                         if (this.player.hp <= 0) {
                             this.explosions.push(new Explosion(this, this.player.x, this.player.y));
+                            this.soundManager.playExplosion();
                             // Large spill on death
                             this.oilSpills.push(new OilSpill(this, this.player.x, this.player.y, 'large'));
                             this.gameOver = true;
@@ -293,6 +302,7 @@ class Game {
                         } else {
                             // Hit effect
                             this.explosions.push(new Explosion(this, this.player.x, this.player.y));
+                            this.soundManager.playHit();
                         }
                     }
                 }
@@ -517,7 +527,9 @@ class Game {
         this.wreckage = [];
 
         this.enemyTimer = 0;
+        this.enemyTimer = 0;
         document.getElementById('game-over').classList.add('hidden');
+        document.getElementById('victory').classList.add('hidden');
         document.getElementById('score').innerText = 'Score: 0';
         this.updateHealthUI();
     }
