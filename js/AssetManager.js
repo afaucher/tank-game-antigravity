@@ -1,78 +1,65 @@
 class AssetManager {
     constructor() {
-        this.sheets = {};
-        this.sprites = {};
-        this.loaded = false;
+        this.images = {}; // Name -> Image
+        this.loadedCount = 0;
+        this.totalCount = 0;
     }
 
-    loadAssets(imagePath, xmlString, sheetName = 'default') {
+    loadImages(fileList, basePath = 'assets/PNG/Default size/') {
         return new Promise((resolve, reject) => {
-            const image = new Image();
-            image.src = imagePath;
-            image.onload = () => {
-                this.sheets[sheetName] = image;
-                if (xmlString) {
-                    try {
-                        const parser = new DOMParser();
-                        const xml = parser.parseFromString(xmlString, "text/xml");
-                        this.parseXML(xml, sheetName);
-                        this.loaded = true;
+            this.totalCount = fileList.length;
+            this.loadedCount = 0;
+            let errors = 0;
+
+            if (this.totalCount === 0) resolve();
+
+            fileList.forEach(filename => {
+                const name = filename.replace('.png', '');
+                const img = new Image();
+                img.src = basePath + filename;
+
+                img.onload = () => {
+                    this.images[name] = img;
+                    this.loadedCount++;
+                    if (this.loadedCount + errors === this.totalCount) {
                         resolve();
-                    } catch (e) {
-                        reject(e);
                     }
-                } else {
-                    resolve();
-                }
-            };
-            image.onerror = (e) => reject(e);
+                };
+
+                img.onerror = (e) => {
+                    console.error(`Failed to load image: ${filename}`, e);
+                    errors++;
+                    if (this.loadedCount + errors === this.totalCount) {
+                        // Resolve anyway so game can start (maybe with missing assets)
+                        resolve();
+                    }
+                };
+            });
         });
     }
 
-    parseXML(xml, sheetName) {
-        const subTextures = xml.getElementsByTagName('SubTexture');
-        for (let i = 0; i < subTextures.length; i++) {
-            const texture = subTextures[i];
-            const name = texture.getAttribute('name');
-            const x = parseInt(texture.getAttribute('x'));
-            const y = parseInt(texture.getAttribute('y'));
-            const width = parseInt(texture.getAttribute('width'));
-            const height = parseInt(texture.getAttribute('height'));
-            const cleanName = name.replace('.png', '');
-
-            this.sprites[cleanName] = { x, y, width, height, sheet: sheetName };
-        }
-    }
-
-    registerSprite(name, sheetName, x, y, width, height) {
-        this.sprites[name] = { x, y, width, height, sheet: sheetName };
-    }
-
     getSprite(name) {
-        return this.sprites[name];
+        return this.images[name];
     }
 
     drawSprite(ctx, name, x, y, width, height, rotation = 0) {
-        const sprite = this.sprites[name];
-        if (!sprite) {
+        const img = this.images[name];
+        if (!img) {
             // console.warn(`Sprite ${name} not found`);
             return;
         }
-
-        const img = this.sheets[sprite.sheet];
-        if (!img) return;
 
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotation);
 
-        const targetWidth = width || sprite.width;
-        const targetHeight = height || sprite.height;
+        const targetWidth = width || img.width;
+        const targetHeight = height || img.height;
 
         ctx.drawImage(
             img,
-            sprite.x, sprite.y, sprite.width, sprite.height,
-            -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight
+            -targetWidth / 2, -targetHeight / 2,
+            targetWidth, targetHeight
         );
         ctx.restore();
     }
